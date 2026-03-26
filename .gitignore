@@ -1,0 +1,47 @@
+# Android/IntelliJ
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.iml
+*.hprof
+*.log
+*.keystore
+*.jks
+*.apk
+*.ap_*
+*.dex
+*.class
+*.jar
+*.war
+*.ear
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.xml
+*.json
+*.bin
+*.lock
+*.orig
+*.rej
+*.swp
+*.swo
+*.tmp
+*.bak
+*.old
+*.orig
+*.orig.*
+*.user
+*.sublime-workspace
+*.sublime-project
+.idea/
+output.json
+# Firebase
+/google-services.json
+# VS Code
+.vscode/
