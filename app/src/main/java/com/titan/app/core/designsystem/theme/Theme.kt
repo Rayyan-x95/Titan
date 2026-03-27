@@ -1,32 +1,23 @@
 package com.titan.app.core.designsystem.theme
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = Primary,
-    onPrimary = Background,
-    primaryContainer = PrimaryDim,
-    onPrimaryContainer = OnSurface,
-    
+    onPrimary = Color.Black,
     secondary = Secondary,
-    onSecondary = Background,
-    
+    onSecondary = Color.Black,
     tertiary = Tertiary,
-    onTertiary = Background,
-    
+    onTertiary = Color.Black,
     background = Background,
     onBackground = OnSurface,
-    
-    surface = SurfaceLevel0,
+    surface = SurfaceContainer,
     onSurface = OnSurface,
-    surfaceVariant = SurfaceLevel1,
-    onSurfaceVariant = OnSurfaceVariant,
-    
-    surfaceContainerLow = SurfaceLevel1,
-    surfaceContainer = SurfaceLevel2,
-    surfaceContainerHigh = SurfaceLevel3
+    surfaceContainer = SurfaceContainer,
+    surfaceContainerLow = SurfaceContainerLow,
+    error = Error
 )
 
 @Composable

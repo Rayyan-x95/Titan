@@ -6,45 +6,45 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/**
- * Dual-font system: 
- * - Plus Jakarta Sans for Display/Headlines (Confidence)
- * - Manrope for Body/Titles (Human)
- */
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Default, // Placeholder for Plus Jakarta Sans
+        fontFamily = FontFamily.Default, // Plus Jakarta Sans placeholder
         fontWeight = FontWeight.Bold,
-        fontSize = 56.sp, // 3.5rem
+        fontSize = 56.sp,
         lineHeight = 64.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-1).sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Default, // Plus Jakarta Sans
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp
     ),
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default, // Manrope
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        lineHeight = 28.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default, // Manrope
+        fontFamily = FontFamily.Default, // Manrope placeholder
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.Default, // Manrope
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 1.1.sp // 0.1em tracking for technical readout feel
+        letterSpacing = 0.5.sp
     )
 )

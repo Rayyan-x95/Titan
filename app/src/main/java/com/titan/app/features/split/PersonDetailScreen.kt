@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,10 +38,10 @@ fun PersonDetailScreen(
         Spacer(modifier = Modifier.height(48.dp))
         
         TextButton(onClick = onBack) {
-            Text("← Back", color = MaterialTheme.colorScheme.primary)
+            Text("← BACK", color = MaterialTheme.colorScheme.onSurfaceSecondary)
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         
         Text(
             text = uiState.personId.uppercase(),
@@ -52,33 +53,36 @@ fun PersonDetailScreen(
         
         val color = if (uiState.balance >= 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
         Text(
-            text = if (uiState.balance >= 0) "Owes you ₹${uiState.balance}" else "You owe ₹${kotlin.math.abs(uiState.balance)}",
-            style = MaterialTheme.typography.titleLarge,
+            text = if (uiState.balance >= 0) "OWES YOU ₹${uiState.balance}" else "YOU OWE ₹${kotlin.math.abs(uiState.balance)}",
+            style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
             color = color
         )
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Button(
+        Surface(
             onClick = {
                 val message = "Hey, just a reminder for ₹${kotlin.math.abs(uiState.balance)} from Titan App 🙌"
                 sendWhatsAppReminder(context, message)
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow
         ) {
-            Text("Send WhatsApp Reminder")
+            Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Text("SEND REMINDER", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(48.dp))
         
-        Text("TRANSACTION HISTORY", style = MaterialTheme.typography.labelSmall)
+        Text("HISTORY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceSecondary)
         
         Spacer(modifier = Modifier.height(16.dp))
         
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(uiState.transactions) { split ->
-                TransactionItem(
+                TransactionGlassItem(
                     split = split, 
                     onClick = { if (!split.isSettled) onNavigateToSettlement(split.id) }
                 )
@@ -89,19 +93,20 @@ fun PersonDetailScreen(
 }
 
 @Composable
-fun TransactionItem(split: Split, onClick: () -> Unit) {
+fun TransactionGlassItem(split: Split, onClick: () -> Unit) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(20.dp),
         modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             Column {
-                Text(split.description.ifEmpty { "Expense" }, style = MaterialTheme.typography.bodyLarge)
-                val status = if (split.isSettled) "Settled" else if (split.settledAmount > 0) "Partial (₹${split.settledAmount} paid)" else "Pending"
+                Text(split.description.ifEmpty { "Expense" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                val status = if (split.isSettled) "Settled" else if (split.settledAmount > 0) "Partial" else "Pending"
                 Text(status, style = MaterialTheme.typography.labelSmall, color = if (split.isSettled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary)
             }
             val perPerson = split.amount / split.participants.size
@@ -116,7 +121,5 @@ private fun sendWhatsAppReminder(context: Context, message: String) {
         val url = "https://api.whatsapp.com/send?text=" + URLEncoder.encode(message, "UTF-8")
         intent.data = Uri.parse(url)
         context.startActivity(intent)
-    } catch (e: Exception) {
-        // Fallback or Toast
-    }
+    } catch (e: Exception) { }
 }
