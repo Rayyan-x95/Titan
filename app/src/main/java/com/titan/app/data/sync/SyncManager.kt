@@ -1,12 +1,12 @@
-package com.titan.app.data.sync
+package com.ninety5.titan.data.sync
 
-import com.titan.app.data.local.dao.PersonDao
-import com.titan.app.data.local.dao.SplitDao
-import com.titan.app.data.mapper.FirebaseMapper.toFirebaseMap
-import com.titan.app.data.mapper.FirebaseMapper.toPersonEntity
-import com.titan.app.data.mapper.FirebaseMapper.toSplitEntity
-import com.titan.app.services.AuthService
-import com.titan.app.services.FirestoreService
+import com.ninety5.titan.data.local.dao.PersonDao
+import com.ninety5.titan.data.local.dao.SplitDao
+import com.ninety5.titan.data.mapper.FirebaseMapper.toFirebaseMap
+import com.ninety5.titan.data.mapper.FirebaseMapper.toPersonEntity
+import com.ninety5.titan.data.mapper.FirebaseMapper.toSplitEntity
+import com.ninety5.titan.services.AuthService
+import com.ninety5.titan.services.FirestoreService
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton

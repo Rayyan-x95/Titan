@@ -1,4 +1,4 @@
-package com.titan.app.di
+package com.ninety5.titan.di
 
 import dagger.Module
 import dagger.Provides

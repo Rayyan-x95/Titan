@@ -1,4 +1,4 @@
-package com.titan.app.services
+package com.ninety5.titan.services
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,7 +8,7 @@ import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.domain.repository.SplitRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first

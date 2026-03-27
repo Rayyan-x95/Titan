@@ -1,4 +1,4 @@
-package com.titan.app.core.designsystem.components
+package com.ninety5.titan.core.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.titan.app.core.designsystem.theme.Primary
-import com.titan.app.core.designsystem.theme.PrimaryDim
+import com.ninety5.titan.core.designsystem.theme.Primary
+import com.ninety5.titan.core.designsystem.theme.PrimaryDim
 
 @Composable
 fun GlassCard(

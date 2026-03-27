@@ -1,4 +1,4 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 import android.content.Context
 import android.content.Intent
@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.domain.model.Split
+import com.ninety5.titan.domain.model.Split
 import java.net.URLEncoder
 
 @Composable

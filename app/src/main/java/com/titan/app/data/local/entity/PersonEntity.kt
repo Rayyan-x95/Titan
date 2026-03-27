@@ -1,4 +1,4 @@
-package com.titan.app.data.local.entity
+package com.ninety5.titan.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

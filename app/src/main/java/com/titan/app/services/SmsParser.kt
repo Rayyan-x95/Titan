@@ -1,4 +1,4 @@
-package com.titan.app.services
+package com.ninety5.titan.services
 
 import java.util.regex.Pattern
 import javax.inject.Inject

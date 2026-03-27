@@ -1,7 +1,7 @@
-package com.titan.app.data.mapper
+package com.ninety5.titan.data.mapper
 
-import com.titan.app.data.local.entity.PersonEntity
-import com.titan.app.data.local.entity.SplitEntity
+import com.ninety5.titan.data.local.entity.PersonEntity
+import com.ninety5.titan.data.local.entity.SplitEntity
 
 /**
  * Maps between Room Entities and Firestore-compatible Maps.

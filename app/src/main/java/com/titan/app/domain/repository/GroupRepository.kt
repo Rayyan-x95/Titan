@@ -1,6 +1,6 @@
-package com.titan.app.domain.repository
+package com.ninety5.titan.domain.repository
 
-import com.titan.app.domain.model.Group
+import com.ninety5.titan.domain.model.Group
 import kotlinx.coroutines.flow.Flow
 
 /**

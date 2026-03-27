@@ -1,7 +1,7 @@
-package com.titan.app.domain.repository
+package com.ninety5.titan.domain.repository
 
-import com.titan.app.domain.model.Person
-import com.titan.app.domain.model.Split
+import com.ninety5.titan.domain.model.Person
+import com.ninety5.titan.domain.model.Split
 import kotlinx.coroutines.flow.Flow
 
 /**

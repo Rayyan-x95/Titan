@@ -1,13 +1,13 @@
-package com.titan.app.data.repository
+package com.ninety5.titan.data.repository
 
-import com.titan.app.data.local.dao.PersonDao
-import com.titan.app.data.local.dao.SplitDao
-import com.titan.app.data.local.entity.PersonEntity
-import com.titan.app.data.local.entity.SplitEntity
-import com.titan.app.data.sync.SyncManager
-import com.titan.app.domain.model.Person
-import com.titan.app.domain.model.Split
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.data.local.dao.PersonDao
+import com.ninety5.titan.data.local.dao.SplitDao
+import com.ninety5.titan.data.local.entity.PersonEntity
+import com.ninety5.titan.data.local.entity.SplitEntity
+import com.ninety5.titan.data.sync.SyncManager
+import com.ninety5.titan.domain.model.Person
+import com.ninety5.titan.domain.model.Split
+import com.ninety5.titan.domain.repository.SplitRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

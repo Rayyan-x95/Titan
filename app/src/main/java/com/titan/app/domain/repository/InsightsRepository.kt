@@ -1,9 +1,9 @@
-package com.titan.app.domain.repository
+package com.ninety5.titan.domain.repository
 
-import com.titan.app.data.local.entity.CashEntryEntity
-import com.titan.app.data.local.entity.EmiEntity
-import com.titan.app.data.local.entity.TransactionEntity
-import com.titan.app.domain.model.Split
+import com.ninety5.titan.data.local.entity.CashEntryEntity
+import com.ninety5.titan.data.local.entity.EmiEntity
+import com.ninety5.titan.data.local.entity.TransactionEntity
+import com.ninety5.titan.domain.model.Split
 import kotlinx.coroutines.flow.Flow
 
 /**

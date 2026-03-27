@@ -1,4 +1,4 @@
-package com.titan.app.core.designsystem.theme
+package com.ninety5.titan.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 

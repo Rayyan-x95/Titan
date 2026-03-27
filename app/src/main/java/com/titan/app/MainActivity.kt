@@ -1,12 +1,12 @@
-package com.titan.app
+package com.ninety5.titan
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import com.titan.app.core.designsystem.theme.TitanTheme
-import com.titan.app.core.navigation.NavGraph
+import com.ninety5.titan.core.designsystem.theme.TitanTheme
+import com.ninety5.titan.core.navigation.NavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 /**

@@ -1,4 +1,4 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 /**
  * Represents the UI state for the Split feature.

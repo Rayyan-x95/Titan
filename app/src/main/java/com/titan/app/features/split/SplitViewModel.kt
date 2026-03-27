@@ -1,9 +1,9 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.titan.app.domain.model.Split
-import com.titan.app.domain.usecase.*
+import com.ninety5.titan.domain.model.Split
+import com.ninety5.titan.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,7 +28,7 @@ class SplitViewModel @Inject constructor(
     private val settleSplitUseCase: SettleSplitUseCase,
     private val partiallySettleSplitUseCase: PartiallySettleSplitUseCase,
     private val syncDataUseCase: SyncDataUseCase,
-    private val repository: com.titan.app.domain.repository.SplitRepository
+    private val repository: com.ninety5.titan.domain.repository.SplitRepository
 ) : ViewModel() {
 
     private val currentUser = "Me"

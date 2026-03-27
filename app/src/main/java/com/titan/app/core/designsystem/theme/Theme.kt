@@ -1,4 +1,4 @@
-package com.titan.app.core.designsystem.theme
+package com.ninety5.titan.core.designsystem.theme
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable

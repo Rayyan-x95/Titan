@@ -1,4 +1,4 @@
-package com.titan.app.domain.model
+package com.ninety5.titan.domain.model
 
 /**
  * Domain-level model representing a group for shared expenses.

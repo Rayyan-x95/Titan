@@ -1,4 +1,4 @@
-package com.titan.app.services
+package com.ninety5.titan.services
 
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await

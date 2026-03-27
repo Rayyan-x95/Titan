@@ -1,4 +1,4 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,7 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.domain.model.Split
+import com.ninety5.titan.domain.model.Split
+import com.ninety5.titan.domain.usecase.ShareSummaryUseCase
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SettlementScreen(
@@ -18,6 +20,8 @@ fun SettlementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val split = uiState.allHistory.find { it.id == splitId }
+    val context = LocalContext.current
+    val shareUseCase = remember { ShareSummaryUseCase() }
     
     var amountText by remember { mutableStateOf("") }
 
@@ -71,6 +75,23 @@ fun SettlementScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text("Mark as Fully Settled")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = {
+                    val message = "Hey, just a reminder for the settlement: ₹${(split.amount - split.settledAmount) / split.participants.size} for ${split.description}. " + shareUseCase.getReferralMessage()
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, message)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share Reminder"))
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Share Reminder (Subtle Titan Branding)")
             }
         }
         

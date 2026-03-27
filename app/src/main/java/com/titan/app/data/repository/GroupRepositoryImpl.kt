@@ -1,10 +1,10 @@
-package com.titan.app.data.repository
+package com.ninety5.titan.data.repository
 
-import com.titan.app.data.local.dao.GroupDao
-import com.titan.app.data.local.entity.GroupEntity
-import com.titan.app.data.sync.SyncManager
-import com.titan.app.domain.model.Group
-import com.titan.app.domain.repository.GroupRepository
+import com.ninety5.titan.data.local.dao.GroupDao
+import com.ninety5.titan.data.local.entity.GroupEntity
+import com.ninety5.titan.data.sync.SyncManager
+import com.ninety5.titan.domain.model.Group
+import com.ninety5.titan.domain.repository.GroupRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

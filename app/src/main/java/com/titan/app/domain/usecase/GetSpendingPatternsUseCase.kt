@@ -1,6 +1,6 @@
-package com.titan.app.domain.usecase
+package com.ninety5.titan.domain.usecase
 
-import com.titan.app.domain.repository.InsightsRepository
+import com.ninety5.titan.domain.repository.InsightsRepository
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 

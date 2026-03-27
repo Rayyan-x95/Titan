@@ -1,4 +1,4 @@
-package com.titan.app.features.india
+package com.ninety5.titan.features.india
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

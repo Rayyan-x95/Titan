@@ -1,4 +1,4 @@
-package com.titan.app
+package com.ninety5.titan
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

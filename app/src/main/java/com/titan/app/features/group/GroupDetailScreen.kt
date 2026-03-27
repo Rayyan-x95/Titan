@@ -1,4 +1,4 @@
-package com.titan.app.features.group
+package com.ninety5.titan.features.group
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.components.GlassCard
+import com.ninety5.titan.core.designsystem.components.GlassCard
 
 @Composable
 fun GroupDetailScreen(
@@ -69,7 +69,7 @@ fun GroupDetailScreen(
 }
 
 @Composable
-fun SettlementRoadmapItem(payment: com.titan.app.domain.usecase.OptimizedPayment) {
+fun SettlementRoadmapItem(payment: com.ninety5.titan.domain.usecase.OptimizedPayment) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
         shape = RoundedCornerShape(16.dp),

@@ -1,7 +1,7 @@
-package com.titan.app.di
+package com.ninety5.titan.di
 
-import com.titan.app.data.repository.SplitRepositoryImpl
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.data.repository.SplitRepositoryImpl
+import com.ninety5.titan.domain.repository.SplitRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -28,5 +28,5 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindInsightsRepository(
         insightsRepositoryImpl: InsightsRepositoryImpl
-    ): com.titan.app.domain.repository.InsightsRepository
+    ): com.ninety5.titan.domain.repository.InsightsRepository
 }

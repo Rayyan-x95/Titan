@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.titan.app"
+    namespace = "com.ninety5.titan"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.titan.app"
+        applicationId = "com.ninety5.titan"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.titan.app.domain.usecase
+package com.ninety5.titan.domain.usecase
 
 import javax.inject.Inject
 

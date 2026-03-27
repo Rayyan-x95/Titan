@@ -1,8 +1,8 @@
-package com.titan.app.domain.usecase
+package com.ninety5.titan.domain.usecase
 
-import com.titan.app.domain.model.Split
-import com.titan.app.domain.repository.GroupRepository
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.domain.model.Split
+import com.ninety5.titan.domain.repository.GroupRepository
+import com.ninety5.titan.domain.repository.SplitRepository
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 

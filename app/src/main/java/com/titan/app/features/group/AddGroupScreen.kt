@@ -1,4 +1,4 @@
-package com.titan.app.features.group
+package com.ninety5.titan.features.group
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.components.GradientButton
+import com.ninety5.titan.core.designsystem.components.GradientButton
 
 @Composable
 fun AddGroupScreen(

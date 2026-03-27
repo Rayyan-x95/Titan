@@ -1,9 +1,9 @@
-package com.titan.app.features.group
+package com.ninety5.titan.features.group
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.titan.app.domain.model.Group
-import com.titan.app.domain.usecase.*
+import com.ninety5.titan.domain.model.Group
+import com.ninety5.titan.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -27,7 +27,7 @@ class GroupViewModel @Inject constructor(
     private val createGroupUseCase: CreateGroupUseCase,
     private val getGroupBalancesUseCase: GetGroupBalancesUseCase,
     private val simplifyGroupSettlementUseCase: SimplifyGroupSettlementUseCase,
-    private val groupRepository: com.titan.app.domain.repository.GroupRepository
+    private val groupRepository: com.ninety5.titan.domain.repository.GroupRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<GroupUiState> = getGroupsUseCase()

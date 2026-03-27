@@ -1,4 +1,4 @@
-package com.titan.app.features.india
+package com.ninety5.titan.features.india
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.components.GlassCard
+import com.ninety5.titan.core.designsystem.components.GlassCard
 
 @Composable
 fun CashTrackerScreen(

@@ -1,7 +1,7 @@
-package com.titan.app.data.repository
+package com.ninety5.titan.data.repository
 
-import com.titan.app.data.local.dao.TransactionDao
-import com.titan.app.data.local.entity.TransactionEntity
+import com.ninety5.titan.data.local.dao.TransactionDao
+import com.ninety5.titan.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

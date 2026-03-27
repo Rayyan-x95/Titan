@@ -1,8 +1,8 @@
-package com.titan.app.di
+package com.ninety5.titan.di
 
 import android.content.Context
 import androidx.room.Room
-import com.titan.app.data.local.TitanDatabase
+import com.ninety5.titan.data.local.TitanDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

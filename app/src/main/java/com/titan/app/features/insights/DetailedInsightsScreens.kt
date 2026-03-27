@@ -1,4 +1,4 @@
-package com.titan.app.features.insights
+package com.ninety5.titan.features.insights
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.domain.usecase.FinancialHealthStatus
+import com.ninety5.titan.domain.usecase.FinancialHealthStatus
 
 @Composable
 fun SpendingPatternsScreen(

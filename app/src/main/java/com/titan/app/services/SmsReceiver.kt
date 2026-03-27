@@ -1,11 +1,11 @@
-package com.titan.app.services
+package com.ninety5.titan.services
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import com.titan.app.data.local.dao.TransactionDao
-import com.titan.app.data.local.entity.TransactionEntity
+import com.ninety5.titan.data.local.dao.TransactionDao
+import com.ninety5.titan.data.local.entity.TransactionEntity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

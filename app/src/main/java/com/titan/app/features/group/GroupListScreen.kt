@@ -1,4 +1,4 @@
-package com.titan.app.features.group
+package com.ninety5.titan.features.group
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,8 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.theme.Primary
-import com.titan.app.core.designsystem.theme.Secondary
+import com.ninety5.titan.core.designsystem.theme.Primary
+import com.ninety5.titan.core.designsystem.theme.Secondary
 
 @Composable
 fun GroupListScreen(
@@ -64,7 +64,7 @@ fun GroupListScreen(
 }
 
 @Composable
-fun GroupGlassItem(group: com.titan.app.domain.model.Group, onClick: () -> Unit) {
+fun GroupGlassItem(group: com.ninety5.titan.domain.model.Group, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),

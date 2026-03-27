@@ -1,6 +1,6 @@
-package com.titan.app.domain.usecase
+package com.ninety5.titan.domain.usecase
 
-import com.titan.app.data.sync.SyncManager
+import com.ninety5.titan.data.sync.SyncManager
 import javax.inject.Inject
 
 /**

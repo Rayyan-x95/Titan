@@ -1,8 +1,8 @@
-package com.titan.app.features.insights
+package com.ninety5.titan.features.insights
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.titan.app.domain.usecase.*
+import com.ninety5.titan.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject

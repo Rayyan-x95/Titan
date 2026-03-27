@@ -1,12 +1,12 @@
-package com.titan.app.data.repository
+package com.ninety5.titan.data.repository
 
-import com.titan.app.data.local.dao.*
-import com.titan.app.data.local.entity.CashEntryEntity
-import com.titan.app.data.local.entity.EmiEntity
-import com.titan.app.data.local.entity.TransactionEntity
-import com.titan.app.domain.model.*
-import com.titan.app.domain.repository.InsightsRepository
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.data.local.dao.*
+import com.ninety5.titan.data.local.entity.CashEntryEntity
+import com.ninety5.titan.data.local.entity.EmiEntity
+import com.ninety5.titan.data.local.entity.TransactionEntity
+import com.ninety5.titan.domain.model.*
+import com.ninety5.titan.domain.repository.InsightsRepository
+import com.ninety5.titan.domain.repository.SplitRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

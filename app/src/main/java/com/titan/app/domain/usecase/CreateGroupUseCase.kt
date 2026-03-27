@@ -1,9 +1,9 @@
-package com.titan.app.domain.usecase
+package com.ninety5.titan.domain.usecase
 
-import com.titan.app.domain.model.Group
-import com.titan.app.domain.model.Person
-import com.titan.app.domain.repository.GroupRepository
-import com.titan.app.domain.repository.SplitRepository
+import com.ninety5.titan.domain.model.Group
+import com.ninety5.titan.domain.model.Person
+import com.ninety5.titan.domain.repository.GroupRepository
+import com.ninety5.titan.domain.repository.SplitRepository
 import java.util.UUID
 import javax.inject.Inject
 

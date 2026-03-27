@@ -1,4 +1,4 @@
-package com.titan.app.features.insights
+package com.ninety5.titan.features.insights
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.components.GlassCard
-import com.titan.app.domain.usecase.FinancialHealthStatus
+import com.ninety5.titan.core.designsystem.components.GlassCard
+import com.ninety5.titan.domain.usecase.FinancialHealthStatus
+import com.ninety5.titan.domain.usecase.ShareSummaryUseCase
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun InsightsScreen(
@@ -23,6 +25,8 @@ fun InsightsScreen(
     viewModel: InsightsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val shareUseCase = remember { ShareSummaryUseCase() }
 
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp)
@@ -77,6 +81,24 @@ fun InsightsScreen(
             Button(onClick = onNavigateToPatterns, modifier = Modifier.weight(1f)) { Text("Patterns") }
             Spacer(modifier = Modifier.width(12.dp))
             Button(onClick = onNavigateToTriggers, modifier = Modifier.weight(1f)) { Text("Triggers") }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        OutlinedButton(
+            onClick = {
+                val health = uiState.healthScore?.score ?: 0
+                val relativity = uiState.reverseInsight?.valueInContext ?: "N/A"
+                shareUseCase.execute(
+                    context = context,
+                    totalOwed = 0.0, // Should fetch from ViewModel if needed
+                    totalOwe = 0.0,
+                    keyInsight = "Health: $health% | Relativity: $relativity"
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text("Share Financial Summary")
         }
     }
 }

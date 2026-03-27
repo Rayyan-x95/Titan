@@ -1,10 +1,10 @@
-package com.titan.app.data.local
+package com.ninety5.titan.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.titan.app.data.local.dao.*
-import com.titan.app.data.local.entity.*
+import com.ninety5.titan.data.local.dao.*
+import com.ninety5.titan.data.local.entity.*
 
 /**
  * Main database class for the Titan app.

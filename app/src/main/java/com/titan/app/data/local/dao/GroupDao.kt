@@ -1,7 +1,7 @@
-package com.titan.app.data.local.dao
+package com.ninety5.titan.data.local.dao
 
 import androidx.room.*
-import com.titan.app.data.local.entity.GroupEntity
+import com.ninety5.titan.data.local.entity.GroupEntity
 import kotlinx.coroutines.flow.Flow
 
 /**

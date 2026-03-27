@@ -1,4 +1,4 @@
-package com.titan.app.data.local
+package com.ninety5.titan.data.local
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson

@@ -1,4 +1,4 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -16,11 +16,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.titan.app.core.designsystem.components.GlassCard
-import com.titan.app.core.designsystem.components.HeroBalance
-import com.titan.app.core.designsystem.theme.Primary
-import com.titan.app.core.designsystem.theme.Secondary
+import com.ninety5.titan.core.designsystem.theme.Primary
+import com.ninety5.titan.core.designsystem.theme.Secondary
+import com.ninety5.titan.features.split.components.QuickAddPanel
 
 @Composable
 fun HomeScreen(
@@ -36,8 +34,10 @@ fun HomeScreen(
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var isQuickAddVisible by remember { mutableStateOf(false) }
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAddExpense,
@@ -60,7 +60,7 @@ fun HomeScreen(
                 }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent // MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -143,6 +143,18 @@ fun HomeScreen(
                 item { Spacer(modifier = Modifier.height(80.dp)) }
             }
         }
+
+        // Quick Add Panel Overlay
+        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            QuickAddPanel(
+                people = uiState.people,
+                isVisible = isQuickAddVisible,
+                onDismiss = { isQuickAddVisible = false },
+                onAdd = { amount, participants ->
+                    viewModel.addSplit(amount, participants)
+                }
+            )
+        }
     }
 }
 
@@ -167,7 +179,7 @@ fun FeatureIcon(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun PersonGlassItem(balance: com.titan.app.domain.usecase.PersonBalance, onClick: () -> Unit) {
+fun PersonGlassItem(balance: com.ninety5.titan.domain.usecase.PersonBalance, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()

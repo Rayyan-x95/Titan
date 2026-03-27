@@ -1,12 +1,12 @@
-package com.titan.app.features.split
+package com.ninety5.titan.features.split
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.titan.app.domain.model.Split
-import com.titan.app.domain.usecase.GetBalancesUseCase
-import com.titan.app.domain.usecase.GetSplitsByPersonUseCase
-import com.titan.app.domain.usecase.PersonBalance
+import com.ninety5.titan.domain.model.Split
+import com.ninety5.titan.domain.usecase.GetBalancesUseCase
+import com.ninety5.titan.domain.usecase.GetSplitsByPersonUseCase
+import com.ninety5.titan.domain.usecase.PersonBalance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
