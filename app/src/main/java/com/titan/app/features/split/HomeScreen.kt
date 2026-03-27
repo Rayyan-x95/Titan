@@ -28,6 +28,10 @@ fun HomeScreen(
     onNavigateToPersonDetail: (String) -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToGroups: () -> Unit,
+    onNavigateToSms: () -> Unit,
+    onNavigateToCash: () -> Unit,
+    onNavigateToEmi: () -> Unit,
+    onNavigateToRent: () -> Unit,
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -115,6 +119,18 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             LazyColumn(modifier = Modifier.weight(1f)) {
+                item {
+                    Text("INDIA LAYER", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        FeatureIcon("SMS", onNavigateToSms)
+                        FeatureIcon("CASH", onNavigateToCash)
+                        FeatureIcon("EMI", onNavigateToEmi)
+                        FeatureIcon("RENT", onNavigateToRent)
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
                 items(uiState.balances) { balance ->
                     PersonGlassItem(
                         balance = balance,
@@ -125,6 +141,26 @@ fun HomeScreen(
                 item { Spacer(modifier = Modifier.height(80.dp)) }
             }
         }
+    }
+}
+
+@Composable
+fun FeatureIcon(label: String, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        Surface(
+            modifier = Modifier.size(56.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = CircleShape
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(label.take(1), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceSecondary)
     }
 }
 

@@ -24,6 +24,10 @@ sealed class Routes(val route: String) {
     object GroupDetail : Routes("group_detail/{groupId}") {
         fun createRoute(groupId: String) = "group_detail/$groupId"
     }
+    object SmsTransactions : Routes("sms_transactions")
+    object CashTracker : Routes("cash_tracker")
+    object EmiTracker : Routes("emi_tracker")
+    object RentSplit : Routes("rent_split")
 }
 
 @Composable
@@ -46,6 +50,18 @@ fun NavGraph() {
                 },
                 onNavigateToGroups = {
                     navController.navigate(Routes.GroupList.route)
+                },
+                onNavigateToSms = {
+                    navController.navigate(Routes.SmsTransactions.route)
+                },
+                onNavigateToCash = {
+                    navController.navigate(Routes.CashTracker.route)
+                },
+                onNavigateToEmi = {
+                    navController.navigate(Routes.EmiTracker.route)
+                },
+                onNavigateToRent = {
+                    navController.navigate(Routes.RentSplit.route)
                 }
             )
         }
@@ -119,6 +135,22 @@ fun NavGraph() {
                     navController.navigate(Routes.AddExpense.createRoute(gid))
                 }
             )
+        }
+
+        composable(Routes.SmsTransactions.route) {
+            SmsTransactionsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CashTracker.route) {
+            CashTrackerScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.EmiTracker.route) {
+            EmiTrackerScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.RentSplit.route) {
+            RentSplitScreen(onBack = { navController.popBackStack() })
         }
     }
 }

@@ -35,4 +35,13 @@ object DatabaseModule {
 
     @Provides
     fun provideGroupDao(database: TitanDatabase): GroupDao = database.groupDao()
+
+    @Provides
+    fun provideTransactionDao(database: TitanDatabase): TransactionDao = database.transactionDao()
+
+    @Provides
+    fun provideEmiDao(database: TitanDatabase): EmiDao = database.emiDao()
+
+    @Provides
+    fun provideCashDao(database: TitanDatabase): CashDao = database.cashDao()
 }
