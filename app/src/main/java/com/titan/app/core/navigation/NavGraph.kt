@@ -28,6 +28,10 @@ sealed class Routes(val route: String) {
     object CashTracker : Routes("cash_tracker")
     object EmiTracker : Routes("emi_tracker")
     object RentSplit : Routes("rent_split")
+    object InsightsHub : Routes("insights_hub")
+    object SpendingPatterns : Routes("spending_patterns")
+    object Triggers : Routes("triggers")
+    object FinancialHealth : Routes("financial_health")
 }
 
 @Composable
@@ -62,6 +66,9 @@ fun NavGraph() {
                 },
                 onNavigateToRent = {
                     navController.navigate(Routes.RentSplit.route)
+                },
+                onNavigateToInsights = {
+                    navController.navigate(Routes.InsightsHub.route)
                 }
             )
         }
@@ -151,6 +158,27 @@ fun NavGraph() {
 
         composable(Routes.RentSplit.route) {
             RentSplitScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.InsightsHub.route) {
+            InsightsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToPatterns = { navController.navigate(Routes.SpendingPatterns.route) },
+                onNavigateToTriggers = { navController.navigate(Routes.Triggers.route) },
+                onNavigateToHealth = { navController.navigate(Routes.FinancialHealth.route) }
+            )
+        }
+
+        composable(Routes.SpendingPatterns.route) {
+            SpendingPatternsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.Triggers.route) {
+            TriggersScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.FinancialHealth.route) {
+            FinancialHealthScreen(onBack = { navController.popBackStack() })
         }
     }
 }

@@ -32,6 +32,7 @@ fun HomeScreen(
     onNavigateToCash: () -> Unit,
     onNavigateToEmi: () -> Unit,
     onNavigateToRent: () -> Unit,
+    onNavigateToInsights: () -> Unit,
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -127,6 +128,7 @@ fun HomeScreen(
                         FeatureIcon("CASH", onNavigateToCash)
                         FeatureIcon("EMI", onNavigateToEmi)
                         FeatureIcon("RENT", onNavigateToRent)
+                        FeatureIcon("IDEA", onNavigateToInsights)
                     }
                     Spacer(modifier = Modifier.height(24.dp))
                 }

@@ -23,7 +23,10 @@ abstract class RepositoryModule {
     abstract fun bindGroupRepository(
         groupRepositoryImpl: GroupRepositoryImpl
     ): GroupRepository
-    
-    // Note: TransactionRepositoryImpl is already @Singleton and injected. 
-    // If we want an interface:
+
+    @Binds
+    @Singleton
+    abstract fun bindInsightsRepository(
+        insightsRepositoryImpl: InsightsRepositoryImpl
+    ): com.titan.app.domain.repository.InsightsRepository
 }
