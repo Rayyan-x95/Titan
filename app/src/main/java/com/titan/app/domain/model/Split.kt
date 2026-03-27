@@ -9,5 +9,8 @@ data class Split(
     val description: String,
     val paidBy: String,
     val participants: List<String>,
-    val createdAt: Long
+    val createdAt: Long,
+    val isSettled: Boolean = false,
+    val settledAmount: Double = 0.0,
+    val updatedAt: Long = System.currentTimeMillis()
 )

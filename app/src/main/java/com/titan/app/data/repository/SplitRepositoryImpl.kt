@@ -39,8 +39,8 @@ class SplitRepositoryImpl @Inject constructor(
     }
 
     // Mapper extensions
-    private fun SplitEntity.toDomain() = Split(id, amount, description, paidBy, participants, createdAt)
-    private fun Split.toEntity() = SplitEntity(id, amount, description, paidBy, participants, createdAt)
+    private fun SplitEntity.toDomain() = Split(id, amount, description, paidBy, participants, createdAt, isSettled, settledAmount, updatedAt)
+    private fun Split.toEntity() = SplitEntity(id, amount, description, paidBy, participants, createdAt, isSettled, settledAmount, updatedAt)
     private fun PersonEntity.toDomain() = Person(id, name)
     private fun Person.toEntity() = PersonEntity(id, name)
 }

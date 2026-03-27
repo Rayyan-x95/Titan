@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.titan.app.data.local.entity.SplitEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -18,6 +19,12 @@ interface SplitDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSplit(split: SplitEntity)
 
-    @Query("SELECT * FROM splits WHERE paidBy = :personId")
-    fun getSplitsByPayer(personId: String): Flow<List<SplitEntity>>
+    @Update
+    suspend fun updateSplit(split: SplitEntity)
+
+    @Query("SELECT * FROM splits WHERE paidBy = :personId OR :personId IN (participants) ORDER BY createdAt DESC")
+    fun getSplitsByPerson(personId: String): Flow<List<SplitEntity>>
+
+    @Query("SELECT * FROM splits WHERE isSettled = 0 ORDER BY createdAt ASC")
+    fun getPendingSplits(): Flow<List<SplitEntity>>
 }

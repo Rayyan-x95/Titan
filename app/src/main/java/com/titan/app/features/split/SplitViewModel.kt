@@ -3,14 +3,9 @@ package com.titan.app.features.split
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.titan.app.domain.model.Split
-import com.titan.app.domain.usecase.AddSplitUseCase
-import com.titan.app.domain.usecase.GetBalancesUseCase
-import com.titan.app.domain.usecase.PersonBalance
+import com.titan.app.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -19,27 +14,42 @@ data class SplitUiState(
     val balances: List<PersonBalance> = emptyList(),
     val totalOwed: Double = 0.0,
     val totalOwe: Double = 0.0,
+    val summaryInsights: SummaryInsights? = null,
+    val allHistory: List<Split> = emptyList(),
     val isLoading: Boolean = false
 )
 
 @HiltViewModel
 class SplitViewModel @Inject constructor(
     private val addSplitUseCase: AddSplitUseCase,
-    private val getBalancesUseCase: GetBalancesUseCase
+    private val getBalancesUseCase: GetBalancesUseCase,
+    private val getSummaryInsightsUseCase: GetSummaryInsightsUseCase,
+    private val settleSplitUseCase: SettleSplitUseCase,
+    private val partiallySettleSplitUseCase: PartiallySettleSplitUseCase,
+    private val repository: com.titan.app.domain.repository.SplitRepository // To get all splits for history
 ) : ViewModel() {
 
-    private val currentUser = "Me" // Placeholder for current user ID
+    private val currentUser = "Me"
 
-    val uiState: StateFlow<SplitUiState> = getBalancesUseCase(currentUser)
-        .map { balances ->
-            val owed = balances.filter { it.amount > 0 }.sumOf { it.amount }
-            val owe = balances.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
-            SplitUiState(balances = balances, totalOwed = owed, totalOwe = owe)
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SplitUiState(isLoading = true)
+    val uiState: StateFlow<SplitUiState> = combine(
+        getBalancesUseCase(currentUser),
+        getSummaryInsightsUseCase(currentUser),
+        repository.getAllSplits()
+    ) { balances, insights, history ->
+        val owed = balances.filter { it.amount > 0 }.sumOf { it.amount }
+        val owe = balances.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
+        SplitUiState(
+            balances = balances, 
+            totalOwed = owed, 
+            totalOwe = owe, 
+            summaryInsights = insights,
+            allHistory = history
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SplitUiState(isLoading = true)
+    )
 
     fun addSplit(amount: Double, description: String, participants: List<String>) {
         viewModelScope.launch {
@@ -52,6 +62,18 @@ class SplitViewModel @Inject constructor(
                 createdAt = System.currentTimeMillis()
             )
             addSplitUseCase(newSplit)
+        }
+    }
+
+    fun settleFull(split: Split) {
+        viewModelScope.launch {
+            settleSplitUseCase(split)
+        }
+    }
+
+    fun settlePartial(split: Split, amount: Double) {
+        viewModelScope.launch {
+            partiallySettleSplitUseCase(split, amount)
         }
     }
 }

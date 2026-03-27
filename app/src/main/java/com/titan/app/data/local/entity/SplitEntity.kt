@@ -11,7 +11,10 @@ data class SplitEntity(
     @PrimaryKey val id: String,
     val amount: Double,
     val description: String,
-    val paidBy: String, // ID of the person who paid
-    val participants: List<String>, // List of IDs of people involved
-    val createdAt: Long
+    val paidBy: String, 
+    val participants: List<String>, 
+    val createdAt: Long,
+    val isSettled: Boolean = false,
+    val settledAmount: Double = 0.0,
+    val updatedAt: Long = System.currentTimeMillis()
 )

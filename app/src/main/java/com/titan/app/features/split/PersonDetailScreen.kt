@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +22,7 @@ import java.net.URLEncoder
 @Composable
 fun PersonDetailScreen(
     onBack: () -> Unit,
+    onNavigateToSettlement: (String) -> Unit,
     viewModel: PersonDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,7 +78,10 @@ fun PersonDetailScreen(
         
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(uiState.transactions) { split ->
-                TransactionItem(split)
+                TransactionItem(
+                    split = split, 
+                    onClick = { if (!split.isSettled) onNavigateToSettlement(split.id) }
+                )
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
@@ -84,19 +89,20 @@ fun PersonDetailScreen(
 }
 
 @Composable
-fun TransactionItem(split: Split) {
+fun TransactionItem(split: Split, onClick: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(split.description, style = MaterialTheme.typography.bodyLarge)
-                Text("Total: ₹${split.amount}", style = MaterialTheme.typography.labelSmall)
+                Text(split.description.ifEmpty { "Expense" }, style = MaterialTheme.typography.bodyLarge)
+                val status = if (split.isSettled) "Settled" else if (split.settledAmount > 0) "Partial (₹${split.settledAmount} paid)" else "Pending"
+                Text(status, style = MaterialTheme.typography.labelSmall, color = if (split.isSettled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary)
             }
             val perPerson = split.amount / split.participants.size
             Text("₹$perPerson", style = MaterialTheme.typography.titleMedium)
@@ -111,6 +117,6 @@ private fun sendWhatsAppReminder(context: Context, message: String) {
         intent.data = Uri.parse(url)
         context.startActivity(intent)
     } catch (e: Exception) {
-        // Fallback for when WhatsApp is not installed
+        // Fallback or Toast
     }
 }

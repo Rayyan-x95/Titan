@@ -21,6 +21,7 @@ import com.titan.app.core.designsystem.theme.PrimaryDim
 fun HomeScreen(
     onNavigateToAddExpense: () -> Unit,
     onNavigateToPersonDetail: (String) -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -33,13 +34,22 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
         
-        Text(
-            text = "TITAN VAULT / BALANCE",
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = MaterialTheme.colorScheme.secondary,
-                fontWeight = FontWeight.Bold
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "TITAN VAULT / BALANCE",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold
+                )
             )
-        )
+            TextButton(onClick = onNavigateToHistory) {
+                Text("View History", style = MaterialTheme.typography.labelSmall)
+            }
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -60,6 +70,33 @@ fun HomeScreen(
                 Column(horizontalAlignment = Alignment.End) {
                     Text("You owe", style = MaterialTheme.typography.labelSmall)
                     Text("₹${uiState.totalOwe}", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Insights
+        uiState.summaryInsights?.let { insights ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("QUICK INSIGHTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "You are owed ₹${insights.totalPendingAmount} from ${insights.peopleWhoOweCount} people.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    insights.oldestPendingSplit?.let { oldest ->
+                        Text(
+                            text = "Oldest pending: ${oldest.description.ifEmpty { "Expense" }} (₹${oldest.amount})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -101,28 +138,6 @@ fun HomeScreen(
             ) {
                 Text("+ Add Expense", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimary)
             }
-        }
-    }
-}
-
-@Composable
-fun PersonBalanceItem(balance: com.titan.app.domain.usecase.PersonBalance, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(balance.personId, style = MaterialTheme.typography.bodyLarge)
-            val color = if (balance.amount >= 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
-            val prefix = if (balance.amount >= 0) "+" else "-"
-            Text("$prefix ₹${kotlin.math.abs(balance.amount)}", color = color, style = MaterialTheme.typography.titleMedium)
         }
     }
 }
