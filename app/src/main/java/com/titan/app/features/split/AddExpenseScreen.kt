@@ -19,6 +19,7 @@ import com.titan.app.core.designsystem.components.GradientButton
 @Composable
 fun AddExpenseScreen(
     onBack: () -> Unit,
+    initialGroupId: String? = null,
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     var amount by remember { mutableStateOf("") }
@@ -101,12 +102,12 @@ fun AddExpenseScreen(
         Spacer(modifier = Modifier.weight(1f))
         
         GradientButton(
-            text = "SPLIT EXPENSE",
+            text = if (initialGroupId != null) "SPLIT IN GROUP" else "SPLIT EXPENSE",
             onClick = {
                 val amountVal = amount.toDoubleOrNull() ?: 0.0
                 val participantsList = participants.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 if (amountVal > 0 && participantsList.isNotEmpty()) {
-                    viewModel.addSplit(amountVal, description, participantsList)
+                    viewModel.addSplit(amountVal, description, participantsList, initialGroupId)
                     onBack()
                 }
             }

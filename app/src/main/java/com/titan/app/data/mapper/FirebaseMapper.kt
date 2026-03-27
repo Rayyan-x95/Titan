@@ -49,4 +49,22 @@ object FirebaseMapper {
             name = this["name"] as? String ?: ""
         )
     }
+
+    fun GroupEntity.toFirebaseMap(): Map<String, Any> {
+        return mapOf(
+            "id" to id,
+            "name" to name,
+            "members" to members,
+            "createdAt" to createdAt
+        )
+    }
+
+    fun Map<String, Any>.toGroupEntity(): GroupEntity {
+        return GroupEntity(
+            id = this["id"] as String,
+            name = this["name"] as? String ?: "",
+            members = (this["members"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+            createdAt = (this["createdAt"] as? Number)?.toLong() ?: 0L
+        )
+    }
 }

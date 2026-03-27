@@ -27,6 +27,7 @@ fun HomeScreen(
     onNavigateToAddExpense: () -> Unit,
     onNavigateToPersonDetail: (String) -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToGroups: () -> Unit,
     viewModel: SplitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -83,6 +84,10 @@ fun HomeScreen(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+
+                TextButton(onClick = onNavigateToGroups) {
+                    Text("Groups", style = MaterialTheme.typography.labelSmall)
                 }
             }
             

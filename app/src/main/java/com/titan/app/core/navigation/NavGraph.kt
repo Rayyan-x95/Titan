@@ -2,83 +2,122 @@ package com.titan.app.core.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.titan.app.features.split.*
+import com.titan.app.features.group.*
 
-/**
- * Defines the navigation routes for the Titan app.
- */
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object AddExpense : Screen("add_expense")
-    object History : Screen("history")
-    object PersonDetail : Screen("person_detail/{personId}") {
+sealed class Routes(val route: String) {
+    object Home : Routes("home")
+    object AddExpense : Routes("add_expense?groupId={groupId}") {
+        fun createRoute(groupId: String? = null) = "add_expense" + (groupId?.let { "?groupId=$it" } ?: "")
+    }
+    object SplitHistory : Routes("split_history")
+    object PersonDetail : Routes("person_detail/{personId}") {
         fun createRoute(personId: String) = "person_detail/$personId"
     }
-    object Settlement : Screen("settlement/{splitId}") {
+    object Settlement : Routes("settlement/{splitId}") {
         fun createRoute(splitId: String) = "settlement/$splitId"
+    }
+    object GroupList : Routes("group_list")
+    object AddGroup : Routes("add_group")
+    object GroupDetail : Routes("group_detail/{groupId}") {
+        fun createRoute(groupId: String) = "group_detail/$groupId"
     }
 }
 
-/**
- * Navigation Graph defining all screens and their destinations.
- */
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Routes.Home.route
     ) {
-        composable(Screen.Home.route) {
+        composable(Routes.Home.route) {
             HomeScreen(
                 onNavigateToAddExpense = {
-                    navController.navigate(Screen.AddExpense.route)
+                    navController.navigate(Routes.AddExpense.createRoute())
                 },
                 onNavigateToPersonDetail = { personId ->
-                    navController.navigate(Screen.PersonDetail.createRoute(personId))
+                    navController.navigate(Routes.PersonDetail.createRoute(personId))
                 },
                 onNavigateToHistory = {
-                    navController.navigate(Screen.History.route)
-                }
-            )
-        }
-        composable(Screen.AddExpense.route) {
-            AddExpenseScreen(onBack = {
-                navController.popBackStack()
-            })
-        }
-        composable(Screen.History.route) {
-            SplitHistoryScreen(onBack = {
-                navController.popBackStack()
-            })
-        }
-        composable(
-            route = Screen.PersonDetail.route,
-            arguments = listOf(navArgument("personId") { type = NavType.StringType })
-        ) {
-            PersonDetailScreen(
-                onBack = {
-                    navController.popBackStack()
+                    navController.navigate(Routes.SplitHistory.route)
                 },
-                onNavigateToSettlement = { splitId ->
-                    navController.navigate(Screen.Settlement.createRoute(splitId))
+                onNavigateToGroups = {
+                    navController.navigate(Routes.GroupList.route)
                 }
             )
         }
+
         composable(
-            route = Screen.Settlement.route,
+            route = Routes.AddExpense.route,
+            arguments = listOf(navArgument("groupId") {
+                type = NavType.StringType
+                nullable = true
+            })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId")
+            AddExpenseScreen(
+                onBack = { navController.popBackStack() },
+                initialGroupId = groupId
+            )
+        }
+
+        composable(Routes.SplitHistory.route) {
+            SplitHistoryScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Routes.PersonDetail.route,
+            arguments = listOf(navArgument("personId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getString("personId") ?: return@composable
+            PersonDetailScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToSettlement = { splitId ->
+                    navController.navigate(Routes.Settlement.createRoute(splitId))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.Settlement.route,
             arguments = listOf(navArgument("splitId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val splitId = backStackEntry.arguments?.getString("splitId") ?: ""
+            val splitId = backStackEntry.arguments?.getString("splitId") ?: return@composable
             SettlementScreen(
-                onBack = {
-                    navController.popBackStack()
+                splitId = splitId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.GroupList.route) {
+            GroupListScreen(
+                onNavigateToGroupDetail = { groupId ->
+                    navController.navigate(Routes.GroupDetail.createRoute(groupId))
                 },
-                splitId = splitId
+                onNavigateToAddGroup = {
+                    navController.navigate(Routes.AddGroup.route)
+                }
+            )
+        }
+
+        composable(Routes.AddGroup.route) {
+            AddGroupScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Routes.GroupDetail.route,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
+            GroupDetailScreen(
+                groupId = groupId,
+                onBack = { navController.popBackStack() },
+                onNavigateToAddExpense = { gid ->
+                    navController.navigate(Routes.AddExpense.createRoute(gid))
+                }
             )
         }
     }

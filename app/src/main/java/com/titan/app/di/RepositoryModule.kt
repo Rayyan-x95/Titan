@@ -17,4 +17,10 @@ abstract class RepositoryModule {
     abstract fun bindSplitRepository(
         splitRepositoryImpl: SplitRepositoryImpl
     ): SplitRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGroupRepository(
+        groupRepositoryImpl: GroupRepositoryImpl
+    ): GroupRepository
 }

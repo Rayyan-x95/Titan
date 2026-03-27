@@ -73,7 +73,7 @@ class SplitViewModel @Inject constructor(
         }
     }
 
-    fun addSplit(amount: Double, description: String, participants: List<String>) {
+    fun addSplit(amount: Double, description: String, participants: List<String>, groupId: String? = null) {
         viewModelScope.launch {
             val newSplit = Split(
                 id = UUID.randomUUID().toString(),
@@ -81,7 +81,8 @@ class SplitViewModel @Inject constructor(
                 description = description,
                 paidBy = currentUser,
                 participants = participants + currentUser,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                groupId = groupId
             )
             addSplitUseCase(newSplit)
         }

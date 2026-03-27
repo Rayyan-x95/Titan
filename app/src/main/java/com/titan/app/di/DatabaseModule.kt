@@ -31,5 +31,8 @@ object DatabaseModule {
     fun providePersonDao(db: TitanDatabase) = db.personDao()
 
     @Provides
-    fun provideSplitDao(db: TitanDatabase) = db.splitDao()
+    fun provideSplitDao(database: TitanDatabase): SplitDao = database.splitDao()
+
+    @Provides
+    fun provideGroupDao(database: TitanDatabase): GroupDao = database.groupDao()
 }

@@ -16,5 +16,6 @@ data class SplitEntity(
     val createdAt: Long,
     val isSettled: Boolean = false,
     val settledAmount: Double = 0.0,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val groupId: String? = null // Nullable to support individual splits
 )

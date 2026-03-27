@@ -45,6 +45,12 @@ class SyncManager @Inject constructor(
             val remotePerson = doc.data?.toPersonEntity() ?: return@forEach
             personDao.insertPerson(remotePerson)
         }
+
+        val remoteGroups = firestoreService.getAllDocuments("groups", userId).documents
+        remoteGroups.forEach { doc ->
+            val remoteGroup = doc.data?.toGroupEntity() ?: return@forEach
+            groupDao.insertGroup(remoteGroup)
+        }
     }
 
     suspend fun pushToRemote(userId: String? = null) {
@@ -58,6 +64,11 @@ class SyncManager @Inject constructor(
         val localPeople = personDao.getAllPeople().first()
         localPeople.forEach { person ->
             firestoreService.saveUserData(uid, "people", person.id, person.toFirebaseMap())
+        }
+
+        val localGroups = groupDao.getAllGroups().first()
+        localGroups.forEach { group ->
+            firestoreService.saveUserData(uid, "groups", group.id, group.toFirebaseMap())
         }
     }
 }
