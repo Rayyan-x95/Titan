@@ -1,5 +1,6 @@
 package com.titan.app.features.split
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -46,6 +47,15 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold
                 )
             )
+            
+            AnimatedVisibility(visible = uiState.isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
             TextButton(onClick = onNavigateToHistory) {
                 Text("View History", style = MaterialTheme.typography.labelSmall)
             }

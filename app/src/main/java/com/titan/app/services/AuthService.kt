@@ -1,28 +1,22 @@
 package com.titan.app.services
 
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Service for Firebase Authentication operations.
- * Skeleton implementation for Phase 0.
- */
 @Singleton
 class AuthService @Inject constructor(
-    private val firebaseAuth: FirebaseAuth
+    private val auth: FirebaseAuth
 ) {
-    /**
-     * Authenticates the user anonymously with Firebase.
-     */
-    fun signInAnonymously() {
-        // TODO: Implementation for Phase 1
+    suspend fun signInAnonymously(): String? {
+        return try {
+            val result = auth.signInAnonymously().await()
+            result.user?.uid
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    /**
-     * Signs out the current user.
-     */
-    fun signOut() {
-        // TODO: Implementation for Phase 1
-    }
+    fun getUserId(): String? = auth.currentUser?.uid
 }

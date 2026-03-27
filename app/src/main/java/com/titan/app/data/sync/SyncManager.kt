@@ -1,0 +1,63 @@
+package com.titan.app.data.sync
+
+import com.titan.app.data.local.dao.PersonDao
+import com.titan.app.data.local.dao.SplitDao
+import com.titan.app.data.mapper.FirebaseMapper.toFirebaseMap
+import com.titan.app.data.mapper.FirebaseMapper.toPersonEntity
+import com.titan.app.data.mapper.FirebaseMapper.toSplitEntity
+import com.titan.app.services.AuthService
+import com.titan.app.services.FirestoreService
+import kotlinx.coroutines.flow.first
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class SyncManager @Inject constructor(
+    private val authService: AuthService,
+    private val firestoreService: FirestoreService,
+    private val splitDao: SplitDao,
+    private val personDao: PersonDao
+) {
+
+    suspend fun sync() {
+        val userId = authService.getUserId() ?: authService.signInAnonymously() ?: return
+        
+        // 1. Pull from Firestore
+        pullFromRemote(userId)
+        
+        // 2. Push to Firestore
+        pushToRemote(userId)
+    }
+
+    private suspend fun pullFromRemote(userId: String) {
+        val remoteSplits = firestoreService.getAllDocuments("splits", userId).documents
+        remoteSplits.forEach { doc ->
+            val remoteSplit = doc.data?.toSplitEntity() ?: return@forEach
+            val localSplit = splitDao.getAllSplits().first().find { it.id == remoteSplit.id }
+            
+            if (localSplit == null || remoteSplit.updatedAt > localSplit.updatedAt) {
+                splitDao.insertSplit(remoteSplit)
+            }
+        }
+
+        val remotePeople = firestoreService.getAllDocuments("people", userId).documents
+        remotePeople.forEach { doc ->
+            val remotePerson = doc.data?.toPersonEntity() ?: return@forEach
+            personDao.insertPerson(remotePerson)
+        }
+    }
+
+    suspend fun pushToRemote(userId: String? = null) {
+        val uid = userId ?: authService.getUserId() ?: return
+        
+        val localSplits = splitDao.getAllSplits().first()
+        localSplits.forEach { split ->
+            firestoreService.saveUserData(uid, "splits", split.id, split.toFirebaseMap())
+        }
+
+        val localPeople = personDao.getAllPeople().first()
+        localPeople.forEach { person ->
+            firestoreService.saveUserData(uid, "people", person.id, person.toFirebaseMap())
+        }
+    }
+}

@@ -4,19 +4,26 @@ import com.titan.app.data.local.dao.PersonDao
 import com.titan.app.data.local.dao.SplitDao
 import com.titan.app.data.local.entity.PersonEntity
 import com.titan.app.data.local.entity.SplitEntity
+import com.titan.app.data.sync.SyncManager
 import com.titan.app.domain.model.Person
 import com.titan.app.domain.model.Split
 import com.titan.app.domain.repository.SplitRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SplitRepositoryImpl @Inject constructor(
     private val splitDao: SplitDao,
-    private val personDao: PersonDao
+    private val personDao: PersonDao,
+    private val syncManager: SyncManager
 ) : SplitRepository {
+
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     override fun getAllSplits(): Flow<List<Split>> = splitDao.getAllSplits().map { entities ->
         entities.map { it.toDomain() }
@@ -24,6 +31,7 @@ class SplitRepositoryImpl @Inject constructor(
 
     override suspend fun addSplit(split: Split) {
         splitDao.insertSplit(split.toEntity())
+        scope.launch { syncManager.pushToRemote() }
     }
 
     override fun getAllPeople(): Flow<List<Person>> = personDao.getAllPeople().map { entities ->
@@ -32,6 +40,7 @@ class SplitRepositoryImpl @Inject constructor(
 
     override suspend fun addPerson(person: Person) {
         personDao.insertPerson(person.toEntity())
+        scope.launch { syncManager.pushToRemote() }
     }
 
     override suspend fun getPersonById(id: String): Person? {

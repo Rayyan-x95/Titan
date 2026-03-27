@@ -16,6 +16,7 @@ data class SplitUiState(
     val totalOwe: Double = 0.0,
     val summaryInsights: SummaryInsights? = null,
     val allHistory: List<Split> = emptyList(),
+    val isSyncing: Boolean = false,
     val isLoading: Boolean = false
 )
 
@@ -26,16 +27,19 @@ class SplitViewModel @Inject constructor(
     private val getSummaryInsightsUseCase: GetSummaryInsightsUseCase,
     private val settleSplitUseCase: SettleSplitUseCase,
     private val partiallySettleSplitUseCase: PartiallySettleSplitUseCase,
-    private val repository: com.titan.app.domain.repository.SplitRepository // To get all splits for history
+    private val syncDataUseCase: SyncDataUseCase,
+    private val repository: com.titan.app.domain.repository.SplitRepository
 ) : ViewModel() {
 
     private val currentUser = "Me"
+    private val _isSyncing = MutableStateFlow(false)
 
     val uiState: StateFlow<SplitUiState> = combine(
         getBalancesUseCase(currentUser),
         getSummaryInsightsUseCase(currentUser),
-        repository.getAllSplits()
-    ) { balances, insights, history ->
+        repository.getAllSplits(),
+        _isSyncing
+    ) { balances, insights, history, syncing ->
         val owed = balances.filter { it.amount > 0 }.sumOf { it.amount }
         val owe = balances.filter { it.amount < 0 }.sumOf { kotlin.math.abs(it.amount) }
         SplitUiState(
@@ -43,13 +47,31 @@ class SplitViewModel @Inject constructor(
             totalOwed = owed, 
             totalOwe = owe, 
             summaryInsights = insights,
-            allHistory = history
+            allHistory = history,
+            isSyncing = syncing
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = SplitUiState(isLoading = true)
     )
+
+    init {
+        triggerSync()
+    }
+
+    fun triggerSync() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                syncDataUseCase()
+            } catch (e: Exception) {
+                // Silent error in background
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
 
     fun addSplit(amount: Double, description: String, participants: List<String>) {
         viewModelScope.launch {
