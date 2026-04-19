@@ -67,9 +67,13 @@ export const useSettings = create<SettingsStore>((set, get) => ({
  * Format a cent-integer amount using the user's preferred currency.
  */
 export function formatMoney(cents: number, currency: CurrencyCode): string {
+  const decimals = new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+  }).resolvedOptions().minimumFractionDigits;
+
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
+  }).format(cents / 10 ** decimals);
 }

@@ -122,6 +122,7 @@ export function TaskForm({
           <div className="space-y-2">
             <span className="text-sm font-medium text-foreground">Due date</span>
             <DatePicker
+              ariaLabel="Due date"
               value={values.dueDate || undefined}
               onChange={(date) => setValues((current) => ({ ...current, dueDate: date ?? '' }))}
               placeholder="Select due date"

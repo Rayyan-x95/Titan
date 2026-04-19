@@ -8,7 +8,6 @@ import { ExpirationPlugin } from 'workbox-expiration';
 
 declare let self: ServiceWorkerGlobalScope;
 
-self.skipWaiting();
 clientsClaim();
 
 self.addEventListener('message', (event) => {

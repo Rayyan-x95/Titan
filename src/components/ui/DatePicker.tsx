@@ -9,6 +9,7 @@ export interface DatePickerProps {
   onChange: (date: string | undefined) => void;
   placeholder?: string;
   label?: string;
+  ariaLabel?: string;
   clearable?: boolean;
   markedDates?: string[];
   className?: string;
@@ -41,6 +42,7 @@ export function DatePicker({
   onChange,
   placeholder = 'Select a date',
   label,
+  ariaLabel,
   clearable = true,
   markedDates,
   className,
@@ -75,37 +77,40 @@ export function DatePicker({
   return (
     <div ref={rootRef} className={cn('relative', className)}>
       {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          'group flex h-12 w-full items-center justify-between gap-3 rounded-2xl border px-4 text-left text-sm transition-all duration-200',
-          'bg-background/60 backdrop-blur-sm',
-          open
-            ? 'border-primary ring-2 ring-primary/20'
-            : 'border-border hover:border-primary/50',
-        )}
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <CalendarDays className={cn('h-4 w-4 shrink-0 transition-colors', hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-          <span className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}>
-            {hasValue ? formatDisplay(value!) : placeholder}
-          </span>
-        </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          onClick={() => setOpen((o) => !o)}
+          className={cn(
+            'group flex h-12 min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl border px-4 text-left text-sm transition-all duration-200',
+            'bg-background/60 backdrop-blur-sm',
+            open
+              ? 'border-primary ring-2 ring-primary/20'
+              : 'border-border hover:border-primary/50',
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <CalendarDays className={cn('h-4 w-4 shrink-0 transition-colors', hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
+            <span className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}>
+              {hasValue ? formatDisplay(value!) : placeholder}
+            </span>
+          </div>
+        </button>
         {hasValue && clearable && (
-          <span
-            role="button"
+          <button
+            type="button"
             aria-label="Clear date"
             onClick={(e) => {
               e.stopPropagation();
               onChange(undefined);
             }}
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive"
           >
             <X className="h-3 w-3" />
-          </span>
+          </button>
         )}
-      </button>
+      </div>
 
       {/* Floating calendar */}
       <AnimatePresence>

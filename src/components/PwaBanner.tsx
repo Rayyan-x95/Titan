@@ -23,7 +23,7 @@ export function PwaBanner() {
 
   const showOffline = !isOnline;
   const showUpdate = updateAvailable && !dismissedUpdate;
-  const showInstall = installAvailable;
+  const showInstall = installAvailable && isOnline;
 
   if (!showOffline && !showUpdate && !showInstall) {
     return null;

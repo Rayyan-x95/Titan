@@ -25,6 +25,7 @@ export function Navigation() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              aria-label={item.label}
               className={({ isActive }) =>
                 cn(
                   'relative flex flex-col items-center justify-center gap-1 rounded-full p-2 text-[10px] font-semibold transition-all duration-300',

@@ -18,6 +18,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useStore } from '@/core/store';
 import { useSettings } from '@/core/settings';
 import type { CurrencyCode } from '@/core/settings';
+import { APP_VERSION } from '@/core/version';
 import { useSeo } from '@/seo';
 
 interface SettingsRowProps {
@@ -58,12 +59,11 @@ function SettingsSection({ title, children }: SettingsSectionProps) {
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange, ariaLabel }: { checked: boolean; onChange: (v: boolean) => void; ariaLabel: string }) {
   return (
     <button
       type="button"
-      role="switch"
-      aria-checked={checked}
+      aria-label={`${ariaLabel}: ${checked ? 'On' : 'Off'}`}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         checked ? 'bg-primary shadow-glow' : 'bg-secondary'
@@ -121,10 +121,15 @@ export function SettingsPage() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
-      await importBackup(parsed);
-      window.alert('Backup imported successfully.');
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as unknown;
+        await importBackup(parsed);
+        window.alert('Backup imported successfully.');
+      } catch (error) {
+        console.error('Failed to import backup', error);
+        window.alert('Invalid backup file.');
+      }
     };
     input.click();
   };
@@ -163,13 +168,13 @@ export function SettingsPage() {
             icon={<Palette className="h-5 w-5" />}
             title="Compact Mode"
             description="Reduce spacing between cards and list items for a denser layout."
-            action={<Toggle checked={compactMode} onChange={setCompactMode} />}
+            action={<Toggle checked={compactMode} onChange={setCompactMode} ariaLabel="Toggle compact mode" />}
           />
           <SettingsRow
             icon={<Smartphone className="h-5 w-5" />}
             title="Animations"
             description="Enable or disable motion animations and micro-interactions."
-            action={<Toggle checked={animations} onChange={setAnimations} />}
+            action={<Toggle checked={animations} onChange={setAnimations} ariaLabel="Toggle animations" />}
           />
         </SettingsSection>
 
@@ -179,7 +184,7 @@ export function SettingsPage() {
             icon={<Bell className="h-5 w-5" />}
             title="Push Notifications"
             description="Get reminded about tasks with upcoming due dates."
-            action={<Toggle checked={notifications} onChange={setNotifications} />}
+            action={<Toggle checked={notifications} onChange={setNotifications} ariaLabel="Toggle push notifications" />}
           />
         </SettingsSection>
 
@@ -273,7 +278,7 @@ export function SettingsPage() {
             title="Titan"
             description="An offline-first productivity app built to unify your tasks, notes, and finances in one place."
             action={
-              <span className="text-xs text-muted-foreground font-mono">v0.0.0</span>
+              <span className="text-xs text-muted-foreground font-mono">{APP_VERSION}</span>
             }
           />
         </SettingsSection>

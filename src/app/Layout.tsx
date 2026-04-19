@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Flame } from 'lucide-react';
 import { PwaBanner } from '@/components/PwaBanner';
+import { APP_VERSION } from '@/core/version';
 
 export function Layout() {
   return (
@@ -28,7 +29,7 @@ export function Layout() {
             <div className="space-y-0.5">
               <h1 className="text-lg font-bold tracking-tight text-gradient">Titan</h1>
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">
-                Productivity Hub
+                Productivity Hub · {APP_VERSION}
               </p>
             </div>
           </div>

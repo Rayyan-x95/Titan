@@ -15,7 +15,7 @@ export interface PwaStatus {
 
 export function usePwaStatus(): PwaStatus {
   const [installAvailable, setInstallAvailable] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
@@ -29,6 +29,7 @@ export function usePwaStatus(): PwaStatus {
     window.addEventListener('titan:pwa-install-availability', onInstallAvailability as EventListener);
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
+    setIsOnline(navigator.onLine);
 
     return () => {
       window.removeEventListener('titan:pwa-install-availability', onInstallAvailability as EventListener);

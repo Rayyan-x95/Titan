@@ -1,8 +1,5 @@
 import { Workbox } from 'workbox-window';
 
-let wb: Workbox | null = null;
-let updateDetected = false;
-
 export interface PwaUpdateController {
   isUpdateAvailable: () => boolean;
   applyUpdate: () => Promise<void>;
@@ -11,6 +8,8 @@ export interface PwaUpdateController {
 
 export function createPwaUpdateController(): PwaUpdateController {
   const listeners = new Set<(available: boolean) => void>();
+  let wb: Workbox | null = null;
+  let updateDetected = false;
 
   const notify = (available: boolean) => {
     for (const listener of listeners) {
@@ -55,21 +54,30 @@ export function createPwaUpdateController(): PwaUpdateController {
         return;
       }
 
-      const controlling = navigator.serviceWorker.controller;
-      if (!controlling) {
+      if (!navigator.serviceWorker.controller) {
         window.location.reload();
         return;
       }
 
-      controlling.postMessage({ type: 'SKIP_WAITING' });
-
-      await new Promise<void>((resolve) => {
+      const controllerChangePromise = new Promise<void>((resolve) => {
+        let timeoutId: number | undefined;
         const onControllerChange = () => {
+          if (timeoutId !== undefined) {
+            window.clearTimeout(timeoutId);
+          }
           navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
           resolve();
         };
+
         navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        timeoutId = window.setTimeout(() => {
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+          resolve();
+        }, 8000);
       });
+
+      await wb.messageSkipWaiting();
+      await controllerChangePromise;
 
       window.location.reload();
     },

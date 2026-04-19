@@ -9,7 +9,7 @@ interface PageShellProps {
 export function PageShell({ title, description, children }: PageShellProps) {
   return (
     <section className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="space-y-3 relative">
+      <div className="relative space-y-3 overflow-x-hidden">
         <div className="absolute -left-4 top-0 h-full w-1 bg-gradient-to-b from-primary to-transparent rounded-r-md"></div>
         <p className="text-[10px] uppercase tracking-[0.3em] font-semibold text-primary pl-2">
           Overview

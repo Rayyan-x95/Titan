@@ -5,6 +5,7 @@ import App from './App';
 import { ThemeProvider } from '@/core/theme';
 import { initializeCoreStore } from '@/core/store';
 import { registerPWA } from '@/pwa';
+import { APP_VERSION } from '@/core/version';
 import '@/styles/global.css';
 
 async function bootstrap() {
@@ -17,6 +18,7 @@ async function bootstrap() {
       <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-foreground">
         <div className="max-w-md space-y-3 rounded-3xl border border-border bg-card p-6 shadow-sm">
           <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Titan</p>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-primary">{APP_VERSION}</p>
           <h1 className="text-2xl font-semibold tracking-tight">Unable to start the app</h1>
           <p className="text-sm text-muted-foreground">
             The offline core failed to initialize. Please refresh the page.
