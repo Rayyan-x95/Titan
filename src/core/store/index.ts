@@ -15,8 +15,19 @@ export type {
   Task,
   TaskInput,
   TaskUpdate,
+  Friend,
+  FriendInput,
+  FriendUpdate,
+  Group,
+  GroupInput,
+  GroupUpdate,
+  SharedExpense,
+  SharedExpenseInput,
+  SharedExpenseUpdate,
+  GroupBalance,
 } from './types';
 export { initializeCoreStore, useStore } from './useStore';
+export type { TimelineItem } from './useStore';
 export {
   clearTaskNoteReference,
   clearTasksForDeletedNote,

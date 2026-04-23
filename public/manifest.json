@@ -28,6 +28,20 @@
       "description": "Add a new expense",
       "url": "/finance?new=1",
       "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Today's Tasks",
+      "short_name": "Tasks",
+      "description": "View today's tasks",
+      "url": "/tasks?date=today",
+      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Weekly Review",
+      "short_name": "Review",
+      "description": "Weekly review and summary",
+      "url": "/finance?week=1",
+      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "share_target": {

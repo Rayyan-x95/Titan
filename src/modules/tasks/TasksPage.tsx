@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus, List, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Calendar } from '@/components/ui/Calendar';
@@ -85,6 +86,14 @@ export function TasksPage() {
   const handleToggleStatus = async (task: Task) => {
     const nextStatus: TaskStatus = task.status === 'todo' ? 'doing' : task.status === 'doing' ? 'done' : 'todo';
     await updateTask(task.id, { status: nextStatus });
+    
+    if (nextStatus === 'done') {
+      const today = new Date().toISOString().split('T')[0];
+      await useStore.getState().updateSnapshot(today, 'task', 1);
+    } else if (task.status === 'done') {
+      const today = new Date().toISOString().split('T')[0];
+      await useStore.getState().updateSnapshot(today, 'task', -1);
+    }
   };
 
   const handleDeleteTask = async (task: Task) => {
@@ -106,15 +115,15 @@ export function TasksPage() {
           />
         </div>
 
-        <div className="flex-1 min-w-0 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
+        <div className="flex-1 min-w-0 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               {(['all', 'active', 'completed'] as const).map((item) => (
                 <button
                   key={item}
                   onClick={() => setFilter(item)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all",
+                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
                     filter === item ? "bg-primary text-white shadow-glow-sm" : "bg-card border border-border text-muted-foreground hover:bg-secondary"
                   )}
                 >
@@ -123,32 +132,64 @@ export function TasksPage() {
               ))}
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="flex rounded-xl border border-border/70 bg-card p-1">
-                <button onClick={() => setView('list')} className={cn("p-1.5 rounded-lg", view === 'list' ? "bg-secondary text-foreground" : "text-muted-foreground")}><List className="h-4 w-4" /></button>
-                <button onClick={() => setView('calendar')} className={cn("p-1.5 rounded-lg", view === 'calendar' ? "bg-secondary text-foreground" : "text-muted-foreground")}><CalendarDays className="h-4 w-4" /></button>
+                <button 
+                  onClick={() => setView('list')} 
+                  aria-label="List view"
+                  className={cn("p-1.5 rounded-lg transition-all", view === 'list' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => setView('calendar')} 
+                  aria-label="Calendar view"
+                  className={cn("p-1.5 rounded-lg transition-all", view === 'calendar' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                </button>
               </div>
-              <Button onClick={openCreateForm} className="shadow-glow"><Plus className="h-4 w-4" /> New</Button>
+              <Button onClick={openCreateForm} className="flex-1 sm:flex-none shadow-glow">
+                <Plus className="h-4 w-4" />
+                <span>New</span>
+              </Button>
             </div>
           </div>
 
-          {view === 'calendar' ? (
-            <TaskCalendar onDateClick={(d) => { setSelectedDate(d); setView('list'); }} onEditTask={openEditForm} />
-          ) : (
-            <div className="space-y-3">
-              {taskTree.topLevel.map(task => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  subtasks={taskTree.childrenMap.get(task.id)}
-                  onEdit={openEditForm}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={handleDeleteTask}
-                />
-              ))}
-              {taskTree.topLevel.length === 0 && <article className="rounded-3xl border border-dashed border-border bg-card/50 p-12 text-center text-muted-foreground">No tasks found</article>}
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={view + filter + (selectedDate?.toISOString() || '')}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {view === 'calendar' ? (
+                <TaskCalendar onDateClick={(d) => { setSelectedDate(d); setView('list'); }} onEditTask={openEditForm} />
+              ) : (
+                <LayoutGroup>
+                  <div className="space-y-4">
+                    {taskTree.topLevel.map(task => (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        subtasks={taskTree.childrenMap.get(task.id)}
+                        onEdit={openEditForm}
+                        onToggleStatus={handleToggleStatus}
+                        onDelete={handleDeleteTask}
+                      />
+                    ))}
+                    {taskTree.topLevel.length === 0 && (
+                      <article className="rounded-[2.5rem] border border-dashed border-border bg-card/20 p-16 text-center">
+                        <p className="text-sm font-bold text-foreground">No tasks found</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Adjust filters or create your first task.</p>
+                      </article>
+                    )}
+                  </div>
+                </LayoutGroup>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 

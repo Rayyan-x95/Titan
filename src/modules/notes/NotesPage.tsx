@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { PageShell } from '@/components/PageShell';
+import { cn } from '@/utils/cn';
 import { useStore } from '@/core/store';
 import type { Note, Task } from '@/core/store/types';
 import { useSeo } from '@/seo';
@@ -145,9 +147,12 @@ export function NotesPage() {
           linkedTaskIds: [],
           linkedNoteIds: values.linkedNoteIds,
           pinned: values.pinned,
+          area: values.area,
         });
 
         await syncTaskLinks(created.id, values.linkedTaskIds);
+        const today = new Date().toISOString().split('T')[0];
+        await useStore.getState().updateSnapshot(today, 'note', 1);
       }
 
       setIsEditorOpen(false);
@@ -192,11 +197,12 @@ export function NotesPage() {
           <button
             type="button"
             onClick={() => setTagFilter('all')}
-            className={
-              tagFilter === 'all'
-                ? 'rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-primary-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
-                : 'rounded-full border border-border/70 bg-card px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
-            }
+            className={cn(
+              "rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all",
+              tagFilter === 'all' 
+                ? "bg-primary text-white shadow-glow-sm" 
+                : "bg-card border border-border text-muted-foreground hover:bg-secondary"
+            )}
           >
             All notes
           </button>
@@ -205,49 +211,54 @@ export function NotesPage() {
               key={tag}
               type="button"
               onClick={() => setTagFilter(tag)}
-              className={
-                tagFilter === tag
-                  ? 'rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-primary-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
-                  : 'rounded-full border border-border/70 bg-card px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
-              }
+              className={cn(
+                "rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all",
+                tagFilter === tag 
+                  ? "bg-primary text-white shadow-glow-sm" 
+                  : "bg-card border border-border text-muted-foreground hover:bg-secondary"
+              )}
             >
               #{tag}
             </button>
           ))}
         </div>
 
-        <Button onClick={openCreateEditor} className="hidden sm:inline-flex" aria-label="Create note">
+        <Button onClick={openCreateEditor} className="hidden sm:inline-flex shadow-glow" aria-label="Create note">
           <Plus className="h-4 w-4" />
           New note
         </Button>
       </div>
 
       {!hydrated ? (
-        <article className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Loading your notes…</p>
+        <article className="rounded-[2.5rem] border border-border bg-card/20 p-12 text-center animate-pulse">
+          <p className="text-sm font-bold text-muted-foreground">Synchronizing your thoughts...</p>
         </article>
       ) : visibleNotes.length === 0 ? (
-        <article className="rounded-3xl border border-dashed border-border bg-card/50 p-6 text-center shadow-sm">
-          <p className="text-sm font-medium text-foreground">No notes yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Open the editor and write your first note.
+        <article className="rounded-[2.5rem] border border-dashed border-border bg-card/20 p-16 text-center">
+          <p className="text-sm font-bold text-foreground">No notes found</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {tagFilter === 'all' ? 'Your knowledge base is empty. Start writing.' : `No notes tagged with #${tagFilter}`}
           </p>
         </article>
       ) : (
-        <section className="space-y-4">
-          {visibleNotes.map((note) => (
-            <NoteItem
-              key={note.id}
-              note={note}
-              linkedTasks={linkedTasksByNoteId.get(note.id) ?? []}
-              onOpen={() => openEditEditor(note)}
-              onDelete={() => handleDeleteNote(note)}
-              onConvertToTask={async () => {
-                await handleConvertToTask(note);
-              }}
-            />
-          ))}
-        </section>
+        <LayoutGroup>
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
+              {visibleNotes.map((note) => (
+                <NoteItem
+                  key={note.id}
+                  note={note}
+                  linkedTasks={linkedTasksByNoteId.get(note.id) ?? []}
+                  onOpen={() => openEditEditor(note)}
+                  onDelete={() => handleDeleteNote(note)}
+                  onConvertToTask={async () => {
+                    await handleConvertToTask(note);
+                  }}
+                />
+              ))}
+            </AnimatePresence>
+          </section>
+        </LayoutGroup>
       )}
 
       <Button
@@ -272,6 +283,7 @@ export function NotesPage() {
                  linkedTaskIds: tasks.filter((task) => task.noteId === editingNote.id).map((task) => task.id),
                  linkedNoteIds: editingNote.linkedNoteIds ?? [],
                  pinned: editingNote.pinned ?? false,
+                 area: (editingNote as any).area || 'personal',
                }
              : undefined
          }

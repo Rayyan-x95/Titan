@@ -13,13 +13,23 @@ import type {
   Budget,
   BudgetInput,
   BudgetUpdate,
-  TaskRecurrence,
   Account,
   AccountInput,
   AccountUpdate,
-  FinancialGoal,
   OnboardingProfile,
   OnboardingUpdate,
+  Friend,
+  FriendInput,
+  FriendUpdate,
+  Group,
+  GroupInput,
+  GroupUpdate,
+  SharedExpense,
+  SharedExpenseInput,
+  SharedExpenseUpdate,
+  DailySnapshot,
+  TaskRecurrence,
+  FinancialGoal,
 } from './types';
 import {
   clearNoteBacklinks,
@@ -30,6 +40,7 @@ import {
   validateTaskNoteReference,
   clearTaskNoteReference
 } from './taskNoteSync';
+import { sanitizeString, sanitizeTags, sanitizeDateString } from '@/utils/sanitizer';
 import {
   applyExpenseToBalance,
   buildBudgetSuggestions,
@@ -41,13 +52,39 @@ import {
   recalculateBalancesForExpenseUpdate,
   revertExpenseFromBalance,
   shouldRebalanceForExpenseUpdate,
+  normalizeAccount,
+  normalizeBudget,
 } from '@/lib/core/financeEngine';
 import {
   calculateNextOccurrence,
   getTodayTasks as getTodayTasksFromEngine,
   normalizeRecurrence as normalizeTaskRecurrence,
+  normalizeTask,
   validateTaskRelationships,
 } from '@/lib/core/taskEngine';
+import { normalizeNote } from '@/lib/core/noteEngine';
+
+// Security: Input validation limits
+const MAX_ARRAY_LENGTH = 1000;
+const VALID_ACCOUNT_ID_PATTERN = /^[a-z]{2,10}-[a-z]{2,10}$/;
+const VALID_TASK_ID_PATTERN = /^[a-z]{2,8}-[0-9]{4,8}$/;
+const VALID_NOTE_ID_PATTERN = /^[a-z]{2,8}-[0-9]{4,8}$/;
+
+function isValidAccountId(id: string): boolean {
+  return typeof id === 'string' && (VALID_ACCOUNT_ID_PATTERN.test(id) || ['cash', 'bank'].includes(id));
+}
+
+function isValidTaskId(id: string): boolean {
+  return typeof id === 'string' && (VALID_TASK_ID_PATTERN.test(id) || id.length > 20);
+}
+
+function isValidNoteId(id: string): boolean {
+  return typeof id === 'string' && (VALID_NOTE_ID_PATTERN.test(id) || id.length > 20);
+}
+
+function sanitizeArray<T>(array: T[]): T[] {
+  return array.slice(0, MAX_ARRAY_LENGTH);
+}
 
 interface CoreStoreState {
   tasks: Task[];
@@ -55,6 +92,10 @@ interface CoreStoreState {
   expenses: Expense[];
   budgets: Budget[];
   accounts: Account[];
+  friends: Friend[];
+  groups: Group[];
+  sharedExpenses: SharedExpense[];
+  dailySnapshots: DailySnapshot[];
   onboarding: OnboardingProfile;
   hydrated: boolean;
   hydrate: () => Promise<void>;
@@ -70,6 +111,20 @@ interface CoreStoreState {
   addAccount: (account: AccountInput) => Promise<Account>;
   updateAccount: (id: string, updates: AccountUpdate) => Promise<Account | undefined>;
   deleteAccount: (id: string) => Promise<void>;
+
+  // Friends
+  addFriend: (input: FriendInput) => Promise<Friend>;
+  updateFriend: (id: string, updates: FriendUpdate) => Promise<Friend | undefined>;
+  deleteFriend: (id: string) => Promise<void>;
+
+  // Groups
+  addGroup: (input: GroupInput) => Promise<Group>;
+  updateGroup: (id: string, updates: GroupUpdate) => Promise<Group | undefined>;
+  deleteGroup: (id: string) => Promise<void>;
+
+  // Shared Expenses
+  addSharedExpense: (input: SharedExpenseInput) => Promise<SharedExpense>;
+  deleteSharedExpense: (id: string) => Promise<void>;
 
   // Tasks
   addTask: (task: TaskInput) => Promise<Task>;
@@ -90,12 +145,23 @@ interface CoreStoreState {
   deleteBudget: (id: string) => Promise<void>;
   processRecurringTransactions: () => Promise<void>;
 
-  // Derived selectors
+  // Rate limiting
+  resetRateLimits: () => Promise<void>;
+
   getTodayTasks: () => Task[];
   getWeeklyExpenses: () => Expense[];
   getCategoryTotals: () => Record<string, number>;
   getPinnedNotes: () => Note[];
+  getTimelineItems: () => TimelineItem[];
+  updateSnapshot: (date: string, type: 'task' | 'expense' | 'note' | 'split', value?: number) => Promise<void>;
+  recomputeSnapshots: () => Promise<void>;
 }
+
+export type TimelineItem = 
+  | { type: 'task'; data: Task; timestamp: string }
+  | { type: 'note'; data: Note; timestamp: string }
+  | { type: 'expense'; data: Expense; timestamp: string }
+  | { type: 'split'; data: SharedExpense; timestamp: string };
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -161,94 +227,6 @@ function normalizeRecurrence(value: unknown): TaskRecurrence | undefined {
   return normalizeTaskRecurrence(value);
 }
 
-function normalizeImportedTask(value: unknown): Task | undefined {
-  if (!isRecord(value) || typeof value.title !== 'string') return undefined;
-
-  const status = value.status === 'doing' || value.status === 'done' ? value.status : 'todo';
-  const priority =
-    value.priority === 'low' || value.priority === 'medium' || value.priority === 'high'
-      ? value.priority
-      : 'medium';
-
-  return {
-    id: typeof value.id === 'string' ? value.id : createId(),
-    title: value.title,
-    status,
-    priority,
-    dueDate: typeof value.dueDate === 'string' ? value.dueDate : undefined,
-    noteId: typeof value.noteId === 'string' ? value.noteId : undefined,
-    parentTaskId: typeof value.parentTaskId === 'string' ? value.parentTaskId : undefined,
-    recurrence: normalizeRecurrence(value.recurrence),
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
-  };
-}
-
-function normalizeImportedNote(value: unknown): Note | undefined {
-  if (!isRecord(value) || typeof value.content !== 'string') return undefined;
-
-  return {
-    id: typeof value.id === 'string' ? value.id : createId(),
-    content: value.content,
-    tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
-    linkedTaskIds: Array.isArray(value.linkedTaskIds)
-      ? value.linkedTaskIds.filter((id): id is string => typeof id === 'string')
-      : [],
-    linkedNoteIds: Array.isArray(value.linkedNoteIds)
-      ? value.linkedNoteIds.filter((id): id is string => typeof id === 'string')
-      : [],
-    pinned: typeof value.pinned === 'boolean' ? value.pinned : false,
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
-  };
-}
-
-function normalizeImportedAccount(value: unknown): Account | undefined {
-  if (!isRecord(value) || typeof value.name !== 'string') return undefined;
-
-  return {
-    id: typeof value.id === 'string' ? value.id : createId(),
-    name: value.name,
-    balance: typeof value.balance === 'number' && Number.isFinite(value.balance) ? value.balance : 0,
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
-  };
-}
-
-function normalizeImportedExpense(value: unknown, fallbackAccountId: string): Expense | undefined {
-  if (!isRecord(value) || typeof value.category !== 'string') return undefined;
-
-  const amount =
-    typeof value.amount === 'number' && Number.isFinite(value.amount)
-      ? value.amount
-      : typeof value.amountDollars === 'number' && Number.isFinite(value.amountDollars)
-        ? dollarsToCentsSafe(value.amountDollars)
-        : 0;
-
-  return {
-    id: typeof value.id === 'string' ? value.id : createId(),
-    amount,
-    category: value.category,
-    type: value.type === 'income' ? 'income' : 'expense',
-    accountId: typeof value.accountId === 'string' ? value.accountId : fallbackAccountId,
-    tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
-    note: typeof value.note === 'string' ? value.note : undefined,
-    isRecurring: typeof value.isRecurring === 'boolean' ? value.isRecurring : false,
-    recurrenceRule: normalizeExpenseRecurrenceRule(value.recurrenceRule),
-    linkedTaskId: typeof value.linkedTaskId === 'string' ? value.linkedTaskId : undefined,
-    linkedNoteId: typeof value.linkedNoteId === 'string' ? value.linkedNoteId : undefined,
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
-  };
-}
-
-function normalizeImportedBudget(value: unknown): Budget | undefined {
-  if (!isRecord(value) || typeof value.category !== 'string') return undefined;
-
-  return {
-    id: typeof value.id === 'string' ? value.id : createId(),
-    category: value.category,
-    limit: typeof value.limit === 'number' && Number.isFinite(value.limit) ? value.limit : 0,
-    period: value.period === 'weekly' ? 'weekly' : 'monthly',
-  };
-}
-
 function normalizeImportedOnboarding(value: unknown, fallback: OnboardingProfile): OnboardingProfile {
   if (!isRecord(value)) return fallback;
 
@@ -256,52 +234,93 @@ function normalizeImportedOnboarding(value: unknown, fallback: OnboardingProfile
   const preferences = isRecord(value.preferences) ? value.preferences : {};
   const goals = Array.isArray(value.goals)
     ? value.goals.filter((goal): goal is FinancialGoal =>
-        goal === 'save-money' ||
-        goal === 'track-spending' ||
-        goal === 'improve-productivity' ||
-        goal === 'reduce-expenses',
+        [
+          'save-money',
+          'track-spending',
+          'improve-productivity',
+          'reduce-expenses',
+        ].includes(goal),
       )
     : [];
 
   return {
     ...base,
     id: 'primary',
-    name: typeof value.name === 'string' ? value.name : base.name,
-    dob: typeof value.dob === 'string' ? value.dob : undefined,
-    income: typeof value.income === 'number' && Number.isFinite(value.income) ? value.income : base.income,
-    avgExpense:
-      typeof value.avgExpense === 'number' && Number.isFinite(value.avgExpense)
-        ? value.avgExpense
-        : base.avgExpense,
+    name: sanitizeString(value.name, 100) || base.name,
+    phoneNumber: sanitizeString(value.phoneNumber, 20),
+    dob: sanitizeDateString(value.dob),
+    income: typeof value.income === 'number' ? normalizePositiveCents(value.income) : base.income,
+    avgExpense: typeof value.avgExpense === 'number' ? normalizePositiveCents(value.avgExpense) : base.avgExpense,
     goals,
     preferences: {
-      notifications:
-        typeof preferences.notifications === 'boolean'
-          ? preferences.notifications
-          : base.preferences.notifications,
-      darkMode:
-        typeof preferences.darkMode === 'boolean'
-          ? preferences.darkMode
-          : base.preferences.darkMode,
+      notifications: typeof preferences.notifications === 'boolean' ? preferences.notifications : base.preferences.notifications,
+      darkMode: typeof preferences.darkMode === 'boolean' ? preferences.darkMode : base.preferences.darkMode,
     },
-    currentStep:
-      typeof value.currentStep === 'number' && Number.isFinite(value.currentStep)
-        ? value.currentStep
-        : base.currentStep,
-    completedAt: typeof value.completedAt === 'string' ? value.completedAt : undefined,
-    skippedAt: typeof value.skippedAt === 'string' ? value.skippedAt : undefined,
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : base.createdAt,
-    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString(),
+    currentStep: typeof value.currentStep === 'number' ? value.currentStep : base.currentStep,
+    completedAt: sanitizeDateString(value.completedAt),
+    skippedAt: sanitizeDateString(value.skippedAt),
+    createdAt: sanitizeDateString(value.createdAt) || base.createdAt,
+    updatedAt: sanitizeDateString(value.updatedAt) || new Date().toISOString(),
+  };
+}
+
+function normalizeImportedFriend(value: unknown): Friend | null {
+  if (!isRecord(value) || !value.name) return null;
+  return {
+    id: typeof value.id === 'string' ? value.id : createId(),
+    name: sanitizeString(value.name, 100),
+    phoneNumber: sanitizeString(value.phoneNumber, 20),
+    avatar: typeof value.avatar === 'string' ? value.avatar : undefined,
+    createdAt: sanitizeDateString(value.createdAt) || createTimestamp(),
+  };
+}
+
+function normalizeImportedGroup(value: unknown, friendIds: Set<string>): Group | null {
+  if (!isRecord(value) || !value.name) return null;
+  const memberIds = Array.isArray(value.memberIds) 
+    ? value.memberIds.filter((id): id is string => typeof id === 'string' && (friendIds.has(id) || id === 'user'))
+    : [];
+  return {
+    id: typeof value.id === 'string' ? value.id : createId(),
+    name: sanitizeString(value.name, 100),
+    memberIds,
+    createdAt: sanitizeDateString(value.createdAt) || createTimestamp(),
+  };
+}
+
+function normalizeImportedSharedExpense(value: unknown, groupIds: Set<string>, friendIds: Set<string>): SharedExpense | null {
+  if (!isRecord(value) || !value.description || typeof value.totalAmount !== 'number') return null;
+  const participants = Array.isArray(value.participants)
+    ? value.participants
+        .filter((p): p is { id: string; amount: number } => isRecord(p) && typeof p.id === 'string' && typeof p.amount === 'number')
+        .map(p => ({ id: p.id, amount: normalizePositiveCents(p.amount) }))
+    : [];
+
+  return {
+    id: typeof value.id === 'string' ? value.id : createId(),
+    totalAmount: normalizePositiveCents(value.totalAmount),
+    description: sanitizeString(value.description, 200),
+    paidBy: typeof value.paidBy === 'string' ? value.paidBy : 'user',
+    groupId: typeof value.groupId === 'string' && groupIds.has(value.groupId) ? value.groupId : undefined,
+    participants,
+    linkedExpenseId: typeof value.linkedExpenseId === 'string' ? value.linkedExpenseId : undefined,
+    note: sanitizeString(value.note, 500),
+    area: typeof value.area === 'string' && ['work', 'personal', 'health', 'finance', 'social'].includes(value.area) ? value.area as SharedExpense['area'] : 'social',
+    createdAt: sanitizeDateString(value.createdAt) || createTimestamp(),
   };
 }
 
 async function hydrateFromDatabase() {
-  const [tasks, notes, expenses, budgets, accounts, onboarding] = await Promise.all([
+  const [tasks, notes, expenses, budgets, accounts, friends, groups, sharedExpenses, dailySnapshots, onboarding] = await Promise.all([
     db.tasks.toArray(),
     db.notes.toArray(),
     db.expenses.toArray(),
     db.budgets.toArray(),
     db.accounts.toArray(),
+    db.friends.toArray(),
+    db.groups.toArray(),
+    db.sharedExpenses.toArray(),
+    db.dailySnapshots.toArray(),
     db.onboarding.get('primary'),
   ]);
 
@@ -312,6 +331,10 @@ async function hydrateFromDatabase() {
     expenses,
     budgets,
     accounts,
+    friends,
+    groups,
+    sharedExpenses,
+    dailySnapshots,
     onboarding: onboarding ?? createDefaultOnboardingProfile(),
   };
 }
@@ -322,30 +345,97 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   expenses: [],
   budgets: [],
   accounts: [],
+  friends: [],
+  groups: [],
+  sharedExpenses: [],
+  dailySnapshots: [],
   onboarding: createDefaultOnboardingProfile(),
   hydrated: false,
 
   hydrate: async () => {
     console.log('[Titan] Hydrating store...');
     try {
-      let { tasks, notes, expenses, budgets, accounts, onboarding } = await hydrateFromDatabase();
+      let {
+        tasks,
+        notes,
+        expenses,
+        budgets,
+        accounts,
+        friends,
+        groups,
+        sharedExpenses,
+        dailySnapshots,
+        onboarding,
+      } = await hydrateFromDatabase();
       
       if (accounts.length === 0) {
         console.log('[Titan] No accounts found, initializing defaults...');
         const defaults: Account[] = [
           { id: 'cash', name: 'Cash', balance: 0, createdAt: new Date().toISOString() },
           { id: 'bank', name: 'Bank', balance: 0, createdAt: new Date().toISOString() },
-          { id: 'upi', name: 'UPI', balance: 0, createdAt: new Date().toISOString() },
         ];
         await db.accounts.bulkPut(defaults);
         accounts = defaults;
+      } else {
+        // Migration: Merge 'upi' into 'bank' if 'upi' exists
+        const upiAccount = accounts.find(a => a.id === 'upi');
+        if (upiAccount) {
+          console.log('[Titan] Migrating UPI account to Bank...');
+          const bankAccount = accounts.find(a => a.id === 'bank');
+          if (bankAccount) {
+            const updatedBank = {
+              ...bankAccount,
+              balance: bankAccount.balance + upiAccount.balance
+            };
+            
+            // Reassign expenses
+            const reassignedExpenses = expenses.map(e => 
+              e.accountId === 'upi' ? { ...e, accountId: 'bank' } : e
+            );
+
+            await db.transaction('rw', [db.accounts, db.expenses], async () => {
+              await db.accounts.delete('upi');
+              await db.accounts.put(updatedBank);
+              const upiExpenses = expenses.filter(e => e.accountId === 'upi');
+              if (upiExpenses.length > 0) {
+                await db.expenses.where('accountId').equals('upi').modify({ accountId: 'bank' });
+              }
+            });
+
+            accounts = accounts.filter(a => a.id !== 'upi').map(a => a.id === 'bank' ? updatedBank : a);
+            expenses = reassignedExpenses;
+          } else {
+            // Just rename upi to bank if bank doesn't exist for some reason
+            const newBank = { ...upiAccount, id: 'bank', name: 'Bank' };
+            await db.transaction('rw', [db.accounts, db.expenses], async () => {
+              await db.accounts.delete('upi');
+              await db.accounts.put(newBank);
+              await db.expenses.where('accountId').equals('upi').modify({ accountId: 'bank' });
+            });
+            accounts = accounts.filter(a => a.id !== 'upi').concat(newBank);
+            expenses = expenses.map(e => e.accountId === 'upi' ? { ...e, accountId: 'bank' } : e);
+          }
+        }
       }
 
-      set({ tasks, notes, expenses, budgets, accounts, onboarding, hydrated: true });
-      console.log('[Titan] Hydration complete.', { tasks: tasks.length, accounts: accounts.length });
+      set({ tasks, notes, expenses, budgets, accounts, friends, groups, sharedExpenses, dailySnapshots, onboarding, hydrated: true });
+      console.log('[Titan] Hydration complete.', { tasks: tasks.length, accounts: accounts.length, snapshots: dailySnapshots.length });
     } catch (error) {
       console.error('[Titan] Hydration failed:', error);
-      set({ hydrated: true });
+      // Ensure we at least have valid empty arrays and onboarding to prevent crashes
+      set({ 
+        tasks: [], 
+        notes: [], 
+        expenses: [], 
+        budgets: [], 
+        accounts: [], 
+        friends: [],
+        groups: [],
+        sharedExpenses: [],
+        dailySnapshots: [],
+        onboarding: createDefaultOnboardingProfile(),
+        hydrated: true 
+      });
     }
   },
 
@@ -353,9 +443,19 @@ export const useStore = create<CoreStoreState>((set, get) => ({
     try {
       const onboarding = createDefaultOnboardingProfile();
       await db.transaction('rw', [db.tasks, db.notes, db.expenses, db.budgets, db.accounts, db.onboarding], async () => {
-        await Promise.all([db.tasks.clear(), db.notes.clear(), db.expenses.clear(), db.budgets.clear(), db.accounts.clear(), db.onboarding.clear()]);
+        await Promise.all([
+          db.tasks.clear(),
+          db.notes.clear(),
+          db.expenses.clear(),
+          db.budgets.clear(),
+          db.accounts.clear(),
+          db.friends?.clear?.(),
+          db.groups?.clear?.(),
+          db.sharedExpenses?.clear?.(),
+          db.onboarding.clear(),
+        ]);
       });
-      set({ tasks: [], notes: [], expenses: [], budgets: [], accounts: [], onboarding });
+      set({ tasks: [], notes: [], expenses: [], budgets: [], accounts: [], friends: [], groups: [], sharedExpenses: [], onboarding });
     } catch (error) {
       console.error('[Titan] Clear all failed:', error);
     }
@@ -367,39 +467,82 @@ export const useStore = create<CoreStoreState>((set, get) => ({
     }
 
     const importedTasks = readArray(payload, 'tasks')
-      .map(normalizeImportedTask)
-      .filter((task): task is Task => Boolean(task));
+      .map(t => normalizeTask(t))
+      .filter(Boolean);
     const importedNotes = readArray(payload, 'notes')
-      .map(normalizeImportedNote)
-      .filter((note): note is Note => Boolean(note));
+      .map(n => normalizeNote(n))
+      .filter(Boolean);
     const reconciled = reconcileTaskNoteReferences(importedTasks, importedNotes);
 
     let importedAccounts = readArray(payload, 'accounts')
-      .map(normalizeImportedAccount)
-      .filter((account): account is Account => Boolean(account));
+      .map(a => normalizeAccount(a))
+      .filter(Boolean);
 
     if (importedAccounts.length === 0) {
       const now = new Date().toISOString();
       importedAccounts = [
         { id: 'cash', name: 'Cash', balance: 0, createdAt: now },
         { id: 'bank', name: 'Bank', balance: 0, createdAt: now },
-        { id: 'upi', name: 'UPI', balance: 0, createdAt: now },
       ];
     }
 
     const accountIds = new Set(importedAccounts.map((account) => account.id));
     const fallbackAccountId = importedAccounts[0].id;
-    const importedExpenses = readArray(payload, 'expenses')
-      .map((expense) => normalizeImportedExpense(expense, fallbackAccountId))
-      .filter((expense): expense is Expense => Boolean(expense))
-      .map((expense) => ({
-        ...expense,
-        accountId: accountIds.has(expense.accountId) ? expense.accountId : fallbackAccountId,
-      }))
+    
+    // Expense normalization helper for backup import
+    const importedExpenses: Expense[] = readArray(payload, 'expenses')
+      .flatMap((e) => {
+        if (!isRecord(e) || typeof e.category !== 'string' || e.category.trim().length === 0) return [];
+        const amount =
+          typeof e.amount === 'number'
+            ? e.amount
+            : typeof e.amountDollars === 'number'
+              ? dollarsToCentsSafe(e.amountDollars)
+              : 0;
+
+        const normalized: Expense = {
+          id: typeof e.id === 'string' ? e.id : crypto.randomUUID(),
+          amount: normalizePositiveCents(amount),
+          category: sanitizeString(e.category, 50),
+          type: e.type === 'income' ? 'income' : 'expense',
+          accountId: typeof e.accountId === 'string' && accountIds.has(e.accountId) ? e.accountId : fallbackAccountId,
+          tags: sanitizeTags(e.tags),
+          area:
+            typeof e.area === 'string' && ['work', 'personal', 'health', 'finance', 'social'].includes(e.area)
+              ? (e.area as Expense['area'])
+              : 'finance',
+          note: sanitizeString(e.note, 500),
+          isRecurring: Boolean(e.isRecurring),
+          recurrenceRule: normalizeExpenseRecurrenceRule(e.recurrenceRule),
+          linkedTaskId: typeof e.linkedTaskId === 'string' ? e.linkedTaskId : undefined,
+          linkedNoteId: typeof e.linkedNoteId === 'string' ? e.linkedNoteId : undefined,
+          createdAt: sanitizeDateString(e.createdAt) || new Date().toISOString(),
+        };
+
+        return [normalized];
+      })
       .map((expense) => sanitizeExpenseReferences(expense, reconciled.tasks, reconciled.notes));
+
     const importedBudgets = readArray(payload, 'budgets')
-      .map(normalizeImportedBudget)
-      .filter((budget): budget is Budget => Boolean(budget));
+      .map(b => normalizeBudget(b))
+      .filter(Boolean);
+
+    const importedFriends = readArray(payload, 'friends')
+      .map(f => normalizeImportedFriend(f))
+      .filter((f): f is Friend => Boolean(f));
+    
+    const friendIds = new Set(importedFriends.map(f => f.id));
+
+    const importedGroups = readArray(payload, 'groups')
+      .map(g => normalizeImportedGroup(g, friendIds))
+      .filter((g): g is Group => Boolean(g));
+
+    const groupIds = new Set(importedGroups.map(g => g.id));
+
+    const importedSharedExpenses = readArray(payload, 'sharedExpenses')
+      .map(se => normalizeImportedSharedExpense(se, groupIds, friendIds))
+      .filter((se): se is SharedExpense => Boolean(se));
+
     const importedOnboarding = normalizeImportedOnboarding(payload.onboarding, get().onboarding);
 
     await db.transaction(
@@ -412,6 +555,9 @@ export const useStore = create<CoreStoreState>((set, get) => ({
           db.expenses.clear(),
           db.budgets.clear(),
           db.accounts.clear(),
+          db.friends?.clear?.(),
+          db.groups?.clear?.(),
+          db.sharedExpenses?.clear?.(),
         ]);
         await Promise.all([
           db.tasks.bulkPut(reconciled.tasks),
@@ -419,6 +565,9 @@ export const useStore = create<CoreStoreState>((set, get) => ({
           db.expenses.bulkPut(importedExpenses),
           db.budgets.bulkPut(importedBudgets),
           db.accounts.bulkPut(importedAccounts),
+          db.friends?.bulkPut?.(importedFriends),
+          db.groups?.bulkPut?.(importedGroups),
+          db.sharedExpenses?.bulkPut?.(importedSharedExpenses),
           db.onboarding.put(importedOnboarding),
         ]);
       },
@@ -430,6 +579,9 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       expenses: importedExpenses,
       budgets: importedBudgets,
       accounts: importedAccounts,
+      friends: importedFriends,
+      groups: importedGroups,
+      sharedExpenses: importedSharedExpenses,
       onboarding: importedOnboarding,
       hydrated: true,
     });
@@ -519,74 +671,181 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   },
 
   deleteAccount: async (id) => {
-    const state = get();
-    const account = state.accounts.find((entry) => entry.id === id);
-    if (!account) return;
-    if (state.accounts.length <= 1) {
-      throw new Error('Cannot delete the last account.');
+    try {
+      console.log('[Titan] Deleting account:', id);
+      const currentState = get();
+      const account = currentState.accounts.find((a) => a.id === id);
+      if (!account) return;
+
+      if (currentState.accounts.length <= 1) {
+        throw new Error('Cannot delete the last account.');
+      }
+
+      const fallbackAccount = currentState.accounts.find((a) => a.id !== id);
+      if (!fallbackAccount) {
+        throw new Error('No fallback account available.');
+      }
+
+      const migratedExpenses = currentState.expenses
+        .filter((expense) => expense.accountId === id)
+        .map((expense) => ({ ...expense, accountId: fallbackAccount.id }));
+      
+      const reassignedExpenses = currentState.expenses.map((expense) =>
+        expense.accountId === id ? { ...expense, accountId: fallbackAccount.id } : expense,
+      );
+
+      const updatedFallbackAccount = {
+        ...fallbackAccount,
+        balance: fallbackAccount.balance + account.balance,
+      };
+
+      await db.transaction('rw', [db.accounts, db.expenses], async () => {
+        await db.accounts.delete(id);
+        await db.accounts.put(updatedFallbackAccount);
+        if (migratedExpenses.length > 0) {
+          await db.expenses.bulkPut(migratedExpenses);
+        }
+      });
+
+      set((prev) => ({
+        accounts: prev.accounts
+          .filter((entry) => entry.id !== id)
+          .map((entry) => (entry.id === fallbackAccount.id ? updatedFallbackAccount : entry)),
+        expenses: reassignedExpenses,
+      }));
+      console.log(`[Titan] Account ${id} deleted. Expenses migrated to ${fallbackAccount.id}.`);
+    } catch (error) {
+      console.error('[Titan] Delete account failed:', error);
+      throw error;
     }
+  },
 
-    const fallbackAccount = state.accounts.find((entry) => entry.id !== id);
-    if (!fallbackAccount) {
-      throw new Error('No fallback account available.');
-    }
-
-    const migratedExpenses = state.expenses
-      .filter((expense) => expense.accountId === id)
-      .map((expense) => ({ ...expense, accountId: fallbackAccount.id }));
-    const reassignedExpenses = state.expenses.map((expense) =>
-      expense.accountId === id
-        ? (migratedExpenses.find((migrated) => migrated.id === expense.id) ?? expense)
-        : expense,
-    );
-
-    const updatedFallbackAccount = {
-      ...fallbackAccount,
-      balance: fallbackAccount.balance + account.balance,
+  // Friends
+  addFriend: async (input) => {
+    const friend: Friend = {
+      id: input.id || createId(),
+      name: sanitizeString(input.name, 100),
+      phoneNumber: sanitizeString(input.phoneNumber, 20),
+      avatar: input.avatar,
+      createdAt: createTimestamp(input.createdAt),
     };
+    await db.friends.put(friend);
+    set(state => ({ friends: upsertItem(state.friends, friend) }));
+    return friend;
+  },
 
-    await db.transaction('rw', [db.accounts, db.expenses], async () => {
-      await db.accounts.delete(id);
-      await db.accounts.put(updatedFallbackAccount);
-      await Promise.all(migratedExpenses.map((expense) => db.expenses.put(expense)));
+  updateFriend: async (id, updates) => {
+    const current = get().friends.find(f => f.id === id);
+    if (!current) return undefined;
+    const next: Friend = { ...current, ...updates };
+    await db.friends.put(next);
+    set(state => ({ friends: upsertItem(state.friends, next) }));
+    return next;
+  },
+
+  deleteFriend: async (id) => {
+    const currentState = get();
+    const groups = currentState.groups.map(g => ({
+      ...g,
+      memberIds: g.memberIds.filter(mid => mid !== id)
+    }));
+
+    await db.transaction('rw', [db.friends, db.groups], async () => {
+      await db.friends.delete(id);
+      for (const g of groups) {
+        await db.groups.update(g.id, { memberIds: g.memberIds });
+      }
     });
 
-    set((prev) => ({
-      accounts: prev.accounts
-        .filter((entry) => entry.id !== id)
-        .map((entry) => (entry.id === fallbackAccount.id ? updatedFallbackAccount : entry)),
-      expenses: reassignedExpenses,
+    set(state => ({
+      friends: state.friends.filter(f => f.id !== id),
+      groups
     }));
+  },
+
+  // Groups
+  addGroup: async (input) => {
+    const group: Group = {
+      id: input.id || createId(),
+      name: sanitizeString(input.name, 100),
+      memberIds: input.memberIds || [],
+      createdAt: createTimestamp(input.createdAt),
+    };
+    await db.groups.put(group);
+    set(state => ({ groups: upsertItem(state.groups, group) }));
+    return group;
+  },
+
+  updateGroup: async (id, updates) => {
+    const current = get().groups.find(g => g.id === id);
+    if (!current) return undefined;
+    const next: Group = { ...current, ...updates };
+    await db.groups.put(next);
+    set(state => ({ groups: upsertItem(state.groups, next) }));
+    return next;
+  },
+
+  deleteGroup: async (id) => {
+    await db.transaction('rw', [db.groups, db.sharedExpenses], async () => {
+      await db.groups.delete(id);
+      await db.sharedExpenses.where('groupId').equals(id).delete();
+    });
+    set(state => ({
+      groups: state.groups.filter(g => g.id !== id),
+      sharedExpenses: state.sharedExpenses.filter(se => se.groupId !== id)
+    }));
+  },
+
+  // Shared Expenses
+  addSharedExpense: async (input) => {
+    const shared: SharedExpense = {
+      id: input.id || createId(),
+      totalAmount: input.totalAmount,
+      description: sanitizeString(input.description, 200),
+      paidBy: input.paidBy || 'user',
+      groupId: input.groupId,
+      participants: input.participants || [],
+      linkedExpenseId: input.linkedExpenseId,
+      note: sanitizeString(input.note, 500),
+      area: input.area ?? 'social',
+      createdAt: createTimestamp(input.createdAt),
+    };
+    await db.transaction('rw', [db.sharedExpenses, db.dailySnapshots], async () => {
+      await db.sharedExpenses.put(shared);
+      await get().updateSnapshot(shared.createdAt.split('T')[0], 'split', shared.totalAmount);
+    });
+    set(state => ({ sharedExpenses: upsertItem(state.sharedExpenses, shared) }));
+    return shared;
+  },
+
+  deleteSharedExpense: async (id) => {
+    await db.sharedExpenses.delete(id);
+    set(state => ({ sharedExpenses: state.sharedExpenses.filter(se => se.id !== id) }));
   },
 
   // Tasks
   addTask: async (input) => {
-    console.log('[Titan] Adding task:', input.title);
     try {
+      console.log('[Titan] Adding task:', input.title);
       const currentState = get();
-      const task: Task = {
-        id: input.id ?? createId(),
-        ...input,
-        priority: input.priority ?? 'medium',
-        recurrence: normalizeTaskRecurrence(input.recurrence),
-        createdAt: createTimestamp(input.createdAt),
-      };
+      const task = normalizeTask(input, currentState.tasks);
 
-      validateTaskNoteReference(task, currentState.notes);
-
-      const relationshipErrors = validateTaskRelationships(task, currentState.tasks);
-      if (relationshipErrors.length > 0) {
-        throw new Error(relationshipErrors.join(' '));
+      const errors = validateTaskRelationships(task, currentState.tasks);
+      if (errors.length > 0) {
+        throw new Error(errors.join(' '));
       }
 
       const nextNotes = syncTaskNoteReference(task, currentState.notes, currentState.tasks);
       const touchedNoteIds = new Set([task.noteId].filter(Boolean) as string[]);
 
-      await db.transaction('rw', [db.tasks, db.notes], async () => {
+      await db.transaction('rw', [db.tasks, db.notes, db.dailySnapshots], async () => {
         await db.tasks.put(task);
-        await Promise.all(
-          nextNotes.filter(n => touchedNoteIds.has(n.id)).map(n => db.notes.put(n))
-        );
+        if (touchedNoteIds.size > 0) {
+          await db.notes.bulkPut(nextNotes.filter(n => touchedNoteIds.has(n.id)));
+        }
+        if (task.status === 'done') {
+          await get().updateSnapshot(task.createdAt.split('T')[0], 'task', 1);
+        }
       });
 
       set(state => ({ 
@@ -606,33 +865,30 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       const current = currentState.tasks.find(t => t.id === id);
       if (!current) return undefined;
       
-      const nextTask: Task = {
-        ...current,
-        ...updates,
-        recurrence:
-          updates.recurrence === undefined
-            ? current.recurrence
-            : normalizeTaskRecurrence(updates.recurrence),
-      };
+      const nextTask = normalizeTask({ ...current, ...updates }, currentState.tasks);
 
-      validateTaskNoteReference(nextTask, currentState.notes);
-
-      const relationshipErrors = validateTaskRelationships(
+      const errors = validateTaskRelationships(
         nextTask,
         currentState.tasks.filter((task) => task.id !== id),
       );
-      if (relationshipErrors.length > 0) {
-        throw new Error(relationshipErrors.join(' '));
+      if (errors.length > 0) {
+        throw new Error(errors.join(' '));
       }
 
       const nextNotes = syncTaskNoteReference(nextTask, currentState.notes, currentState.tasks);
       const touchedNoteIds = new Set([current.noteId, nextTask.noteId].filter(Boolean) as string[]);
 
-      await db.transaction('rw', [db.tasks, db.notes], async () => {
+      await db.transaction('rw', [db.tasks, db.notes, db.dailySnapshots], async () => {
         await db.tasks.put(nextTask);
-        await Promise.all(
-          nextNotes.filter(n => touchedNoteIds.has(n.id)).map(n => db.notes.put(n))
-        );
+        if (touchedNoteIds.size > 0) {
+          await db.notes.bulkPut(nextNotes.filter(n => touchedNoteIds.has(n.id)));
+        }
+        
+        if (nextTask.status === 'done' && current.status !== 'done') {
+          await get().updateSnapshot(nextTask.createdAt.split('T')[0], 'task', 1);
+        } else if (nextTask.status !== 'done' && current.status === 'done') {
+          await get().updateSnapshot(nextTask.createdAt.split('T')[0], 'task', -1);
+        }
       });
 
       set(state => ({ 
@@ -647,37 +903,72 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   },
 
   deleteTask: async (id) => {
-    console.log('[Titan] Deleting task:', id);
     try {
+      console.log('[Titan] Deleting task:', id);
       const currentState = get();
-      const currentTask = currentState.tasks.find(t => t.id === id);
-      const nextNotes = currentTask ? clearTaskNoteReference(id, currentState.notes) : currentState.notes;
+      
+      // Find all subtasks recursively
+      const subtaskIds = new Set<string>();
+      const findSubtasks = (parentId: string) => {
+        currentState.tasks.filter(t => t.parentTaskId === parentId).forEach(sub => {
+          if (!subtaskIds.has(sub.id)) {
+            subtaskIds.add(sub.id);
+            findSubtasks(sub.id);
+          }
+        });
+      };
+      findSubtasks(id);
+      
+      const allIdsToDelete = [id, ...Array.from(subtaskIds)];
+      const affectedNoteIds = new Set<string>();
+      
+      // Collect all notes that need to be updated
+      allIdsToDelete.forEach(taskId => {
+        const t = currentState.tasks.find(x => x.id === taskId);
+        if (t?.noteId) affectedNoteIds.add(t.noteId);
+      });
+
+      const nextNotes = currentState.notes.map(note => {
+        let updated = false;
+        let linkedTaskIds = note.linkedTaskIds || [];
+        
+        const nextLinked = linkedTaskIds.filter(tid => !allIdsToDelete.includes(tid));
+        if (nextLinked.length !== linkedTaskIds.length) {
+          updated = true;
+          linkedTaskIds = nextLinked;
+        }
+        
+        return updated ? { ...note, linkedTaskIds } : note;
+      });
+
       const nextExpenses = currentState.expenses.map((expense) =>
-        expense.linkedTaskId === id ? { ...expense, linkedTaskId: undefined } : expense,
-      );
-      const touchedExpenseIds = new Set(
-        currentState.expenses.filter((expense) => expense.linkedTaskId === id).map((expense) => expense.id),
+        allIdsToDelete.includes(expense.linkedTaskId || '') ? { ...expense, linkedTaskId: undefined } : expense,
       );
 
       await db.transaction('rw', [db.tasks, db.notes, db.expenses], async () => {
-        await db.tasks.delete(id);
-        if (currentTask?.noteId) {
-          const updatedNote = nextNotes.find(n => n.id === currentTask.noteId);
-          if (updatedNote) await db.notes.put(updatedNote);
+        if (typeof db.tasks.bulkDelete === 'function') {
+          await db.tasks.bulkDelete(allIdsToDelete);
+        } else {
+          await Promise.all(allIdsToDelete.map((taskId) => db.tasks.delete(taskId)));
         }
-        await Promise.all(
-          nextExpenses
-            .filter((expense) => touchedExpenseIds.has(expense.id))
-            .map((expense) => db.expenses.put(expense)),
-        );
+        
+        const updatedNotes = nextNotes.filter(n => affectedNoteIds.has(n.id));
+        if (updatedNotes.length > 0) {
+          await db.notes.bulkPut(updatedNotes);
+        }
+        
+        const updatedExpenses = nextExpenses.filter(e => allIdsToDelete.includes(get().expenses.find(x => x.id === e.id)?.linkedTaskId || ''));
+        if (updatedExpenses.length > 0) {
+          await db.expenses.bulkPut(updatedExpenses);
+        }
       });
 
       set(state => ({ 
-        tasks: state.tasks.filter(t => t.id !== id),
+        tasks: state.tasks.filter(t => !allIdsToDelete.includes(t.id)),
         notes: nextNotes,
         expenses: nextExpenses,
       }));
-      console.log('[Titan] Task deleted successfully.');
+      console.log(`[Titan] Deleted task ${id} and ${subtaskIds.size} subtasks.`);
     } catch (error) {
       console.error('[Titan] Delete task failed:', error);
       throw error;
@@ -686,29 +977,24 @@ export const useStore = create<CoreStoreState>((set, get) => ({
 
   // Notes
   addNote: async (input) => {
-    const note: Note = {
-      id: input.id ?? createId(),
-      content: input.content,
-      tags: input.tags,
-      pinned: input.pinned ?? false,
-      linkedNoteIds: input.linkedNoteIds ?? [],
-      linkedTaskIds: input.linkedTaskIds ?? [],
-      createdAt: createTimestamp(input.createdAt),
-    };
+    try {
+      console.log('[Titan] Adding note');
+      const note = normalizeNote(input);
+      const currentState = get();
+      const nextNotes = syncNoteNoteReferences(note, currentState.notes);
+      const touchedIds = new Set([note.id, ...(note.linkedNoteIds ?? [])]);
 
-    const currentState = get();
-    const nextNotes = syncNoteNoteReferences(note, currentState.notes);
-    const touchedIds = new Set([note.id, ...(note.linkedNoteIds ?? [])]);
+      await db.transaction('rw', [db.notes, db.dailySnapshots], async () => {
+        await db.notes.bulkPut(nextNotes.filter(n => touchedIds.has(n.id)));
+        await get().updateSnapshot(note.createdAt.split('T')[0], 'note', 1);
+      });
 
-    await db.transaction('rw', [db.notes], async () => {
-      await db.notes.put(note);
-      await Promise.all(
-        nextNotes.filter((entry) => touchedIds.has(entry.id)).map((entry) => db.notes.put(entry)),
-      );
-    });
-
-    set({ notes: nextNotes });
-    return note;
+      set(state => ({ notes: nextNotes }));
+      return note;
+    } catch (error) {
+      console.error('[Titan] Add note failed:', error);
+      throw error;
+    }
   },
 
   updateNote: async (id, updates) => {
@@ -716,23 +1002,29 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       const currentState = get();
       const current = currentState.notes.find(n => n.id === id);
       if (!current) return undefined;
-      
-      const nextNote: Note = { ...current, ...updates };
+
+      const nextNote = normalizeNote({ ...current, ...updates });
       const nextNotes = syncNoteNoteReferences(nextNote, currentState.notes);
-      const touchedIds = new Set([
-        nextNote.id,
-        ...(current.linkedNoteIds ?? []),
-        ...(nextNote.linkedNoteIds ?? []),
-      ]);
-      
-      await db.transaction('rw', [db.notes], async () => {
-        await db.notes.put(nextNote);
-        await Promise.all(
-          nextNotes.filter(n => touchedIds.has(n.id)).map(n => db.notes.put(n))
-        );
+      const touchedIds = new Set([nextNote.id, ...(nextNote.linkedNoteIds ?? []), ...(current.linkedNoteIds ?? [])]);
+
+      await db.transaction('rw', [db.notes, db.tasks], async () => {
+        await db.notes.bulkPut(nextNotes.filter(n => touchedIds.has(n.id)));
+        
+        const { tasks: nextTasks } = reconcileTaskNoteReferences(currentState.tasks, [nextNote]);
+        const changedTasks = nextTasks.filter(t => {
+          const orig = currentState.tasks.find(ot => ot.id === t.id);
+          return JSON.stringify(orig) !== JSON.stringify(t);
+        });
+        if (changedTasks.length > 0) {
+          await db.tasks.bulkPut(changedTasks);
+        }
       });
 
-      set(state => ({ notes: nextNotes }));
+      set(state => ({
+        notes: nextNotes,
+        tasks: reconcileTaskNoteReferences(state.tasks, [nextNote]).tasks
+      }));
+
       return nextNote;
     } catch (error) {
       console.error('[Titan] Update note failed:', error);
@@ -742,29 +1034,40 @@ export const useStore = create<CoreStoreState>((set, get) => ({
 
   deleteNote: async (id) => {
     try {
+      console.log('[Titan] Deleting note:', id);
       const currentState = get();
-      const nextNotes = clearNoteBacklinks(id, currentState.notes);
+      
+      const nextNotes = clearNoteBacklinks(id, currentState.notes).filter(n => n.id !== id);
       const nextTasks = clearTasksForDeletedNote(id, currentState.tasks);
       const nextExpenses = currentState.expenses.map((expense) =>
         expense.linkedNoteId === id ? { ...expense, linkedNoteId: undefined } : expense,
       );
+      
       const touchedTaskIds = new Set(
         currentState.tasks.filter((task) => task.noteId === id).map((task) => task.id),
       );
       const touchedExpenseIds = new Set(
         currentState.expenses.filter((expense) => expense.linkedNoteId === id).map((expense) => expense.id),
       );
+      const touchedNoteIds = new Set(
+        currentState.notes.filter(n => n.linkedNoteIds?.includes(id)).map(n => n.id)
+      );
 
       await db.transaction('rw', [db.tasks, db.notes, db.expenses], async () => {
         await db.notes.delete(id);
-        await Promise.all(nextNotes.filter(n => n.id !== id).map(n => db.notes.put(n)));
-        await Promise.all(nextTasks.filter(t => touchedTaskIds.has(t.id)).map(t => db.tasks.put(t)));
-        await Promise.all(
-          nextExpenses.filter((expense) => touchedExpenseIds.has(expense.id)).map((expense) => db.expenses.put(expense)),
-        );
+        if (touchedNoteIds.size > 0) {
+          await db.notes.bulkPut(nextNotes.filter(n => touchedNoteIds.has(n.id)));
+        }
+        if (touchedTaskIds.size > 0) {
+          await db.tasks.bulkPut(nextTasks.filter(t => touchedTaskIds.has(t.id)));
+        }
+        if (touchedExpenseIds.size > 0) {
+          await db.expenses.bulkPut(nextExpenses.filter(e => touchedExpenseIds.has(e.id)));
+        }
       });
 
-      set({ notes: nextNotes.filter(n => n.id !== id), tasks: nextTasks, expenses: nextExpenses });
+      set({ notes: nextNotes, tasks: nextTasks, expenses: nextExpenses });
+      console.log('[Titan] Note deleted successfully.');
     } catch (error) {
       console.error('[Titan] Delete note failed:', error);
       throw error;
@@ -773,61 +1076,60 @@ export const useStore = create<CoreStoreState>((set, get) => ({
 
   // Finance
   addExpense: async (input) => {
-    console.log('[Titan] Adding expense:', input.category, input.amountDollars);
     try {
-      const sanitizedInput = sanitizeExpenseReferences(input, get().tasks, get().notes);
-      const amount = normalizePositiveCents(dollarsToCentsSafe(input.amountDollars));
+      console.log('[Titan] Adding expense:', input.category);
+      const currentState = get();
+      const sanitizedInput = sanitizeExpenseReferences(input, currentState.tasks, currentState.notes);
+      const amount = normalizePositiveCents(
+        typeof input.amount === 'number' 
+          ? input.amount 
+          : dollarsToCentsSafe(input.amountDollars || 0)
+      );
+      
       const accountId =
         sanitizedInput.accountId ??
-        get().accounts.find((account) => account.id === 'cash')?.id ??
-        get().accounts[0]?.id;
+        currentState.accounts.find((account) => account.id === 'cash')?.id ??
+        currentState.accounts[0]?.id;
+      
+      if (!accountId) throw new Error('No account available for expense.');
+      if (amount <= 0) throw new Error('Amount must be greater than zero.');
+
       const type = sanitizedInput.type ?? 'expense';
-
-      if (!accountId) {
-        console.error('[Titan] No account available for expense.');
-        throw new Error('No account available for expense.');
-      }
-      if (amount <= 0) {
-        throw new Error('Amount must be greater than zero.');
-      }
-
       const recurrenceRule = sanitizedInput.isRecurring
         ? normalizeExpenseRecurrenceRule(sanitizedInput.recurrenceRule)
         : undefined;
 
       const expense: Expense = {
-        id: input.id ?? createId(),
+        id: input.id ?? crypto.randomUUID(),
         amount,
-        category: input.category,
+        category: sanitizeString(input.category, 50) || 'Uncategorized',
         type,
         accountId,
-        tags: sanitizedInput.tags ?? [],
-        note: sanitizedInput.note,
-        isRecurring: sanitizedInput.isRecurring ?? false,
+        tags: sanitizeTags(sanitizedInput.tags),
+        note: sanitizeString(sanitizedInput.note, 500),
+        isRecurring: Boolean(sanitizedInput.isRecurring),
         recurrenceRule,
         linkedTaskId: sanitizedInput.linkedTaskId,
         linkedNoteId: sanitizedInput.linkedNoteId,
-        createdAt: createTimestamp(input.createdAt),
+        area: (input as any).area || 'finance',
+        createdAt: sanitizeDateString(input.createdAt) || new Date().toISOString(),
       };
 
-      const account = get().accounts.find(a => a.id === accountId);
-      if (!account) {
-        console.error('[Titan] Account not found for ID:', accountId);
-        throw new Error(`Account not found: ${accountId}`);
-      }
+      const account = currentState.accounts.find(a => a.id === accountId);
+      if (!account) throw new Error(`Account not found: ${accountId}`);
 
       const nextBalance = applyExpenseToBalance(account.balance, amount, type);
 
-      await db.transaction('rw', [db.expenses, db.accounts], async () => {
+      await db.transaction('rw', [db.expenses, db.accounts, db.dailySnapshots], async () => {
         await db.expenses.put(expense);
         await db.accounts.update(account.id, { balance: nextBalance });
+        await get().updateSnapshot(expense.createdAt.split('T')[0], 'expense', amount);
       });
 
       set(state => ({ 
         expenses: upsertItem(state.expenses, expense),
         accounts: upsertItem(state.accounts, { ...account, balance: nextBalance })
       }));
-      console.log('[Titan] Expense added successfully.');
       return expense;
     } catch (error) {
       console.error('[Titan] Add expense failed:', error);
@@ -919,24 +1221,29 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   },
 
   addBudget: async (input) => {
-    const budget: Budget = {
-      id: input.id ?? createId(),
-      category: input.category,
-      limit: input.limit,
-      period: input.period,
-    };
-    await db.budgets.put(budget);
-    set(state => ({ budgets: upsertItem(state.budgets, budget) }));
-    return budget;
+    try {
+      const budget = normalizeBudget(input);
+      await db.budgets.put(budget);
+      set(state => ({ budgets: upsertItem(state.budgets, budget) }));
+      return budget;
+    } catch (error) {
+      console.error('[Titan] Add budget failed:', error);
+      throw error;
+    }
   },
 
   updateBudget: async (id, updates) => {
-    const current = get().budgets.find(b => b.id === id);
-    if (!current) return undefined;
-    const next = { ...current, ...updates };
-    await db.budgets.put(next);
-    set(state => ({ budgets: upsertItem(state.budgets, next) }));
-    return next;
+    try {
+      const current = get().budgets.find(b => b.id === id);
+      if (!current) return undefined;
+      const next = normalizeBudget({ ...current, ...updates });
+      await db.budgets.put(next);
+      set(state => ({ budgets: upsertItem(state.budgets, next) }));
+      return next;
+    } catch (error) {
+      console.error('[Titan] Update budget failed:', error);
+      throw error;
+    }
   },
 
   deleteBudget: async (id) => {
@@ -956,19 +1263,114 @@ export const useStore = create<CoreStoreState>((set, get) => ({
     return calculateCategoryTotals(get().expenses);
   },
 
+  getPinnedNotes: () => {
+    return get().notes.filter((n) => n.pinned);
+  },
+
+  getTimelineItems: () => {
+    const { tasks, notes, expenses, sharedExpenses } = get();
+    const items: TimelineItem[] = [
+      ...tasks.map(t => ({ type: 'task' as const, data: t, timestamp: t.createdAt })),
+      ...notes.map(n => ({ type: 'note' as const, data: n, timestamp: n.createdAt })),
+      ...expenses.map(e => ({ type: 'expense' as const, data: e, timestamp: e.createdAt })),
+      ...sharedExpenses.map(se => ({ type: 'split' as const, data: se, timestamp: se.createdAt })),
+    ];
+    return items.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  },
+
+  updateSnapshot: async (date, type, value = 1) => {
+    const snapshots = get().dailySnapshots;
+    let snapshot = snapshots.find(s => s.date === date);
+    
+    if (!snapshot) {
+      snapshot = {
+        date,
+        tasksCompleted: 0,
+        expensesTotal: 0,
+        notesCreated: 0,
+        splitsAdded: 0,
+        topArea: 'personal',
+      };
+    }
+
+    if (type === 'task') snapshot.tasksCompleted += value;
+    else if (type === 'expense') snapshot.expensesTotal += value;
+    else if (type === 'note') snapshot.notesCreated += value;
+    else if (type === 'split') snapshot.splitsAdded += value;
+
+    if (db.dailySnapshots && typeof db.dailySnapshots.put === 'function') {
+      await db.dailySnapshots.put(snapshot);
+    }
+    set((state) => {
+      const nextSnapshots = state.dailySnapshots.filter((entry) => entry.date !== snapshot!.date);
+      nextSnapshots.push(snapshot!);
+      return { dailySnapshots: nextSnapshots };
+    });
+  },
+
+  recomputeSnapshots: async () => {
+    const { tasks, expenses, notes, sharedExpenses } = get();
+    const snapshotMap = new Map<string, DailySnapshot>();
+
+    const getSnapshot = (date: string) => {
+      if (!snapshotMap.has(date)) {
+        snapshotMap.set(date, {
+          date,
+          tasksCompleted: 0,
+          expensesTotal: 0,
+          notesCreated: 0,
+          splitsAdded: 0,
+          topArea: 'personal',
+        });
+      }
+      return snapshotMap.get(date)!;
+    };
+
+    tasks.filter(t => t.status === 'done').forEach(t => {
+      const date = t.createdAt.split('T')[0];
+      getSnapshot(date).tasksCompleted += 1;
+    });
+
+    expenses.filter(e => e.type === 'expense').forEach(e => {
+      const date = e.createdAt.split('T')[0];
+      getSnapshot(date).expensesTotal += e.amount;
+    });
+
+    notes.forEach(n => {
+      const date = n.createdAt.split('T')[0];
+      getSnapshot(date).notesCreated += 1;
+    });
+
+    sharedExpenses.forEach(se => {
+      const date = se.createdAt.split('T')[0];
+      getSnapshot(date).splitsAdded += se.totalAmount;
+    });
+
+    const newSnapshots = Array.from(snapshotMap.values());
+    await db.transaction('rw', [db.dailySnapshots], async () => {
+      await db.dailySnapshots.clear();
+      await db.dailySnapshots.bulkPut(newSnapshots);
+    });
+
+    set({ dailySnapshots: newSnapshots });
+  },
+
   processRecurringTransactions: async () => {
     const { expenses, addExpense, updateExpense } = get();
     const now = new Date();
     const recurring = expenses.filter(e => e.isRecurring && e.recurrenceRule);
 
     for (const item of recurring) {
-      let cursorDate = new Date(item.createdAt);
-      let nextDate = new Date(calculateNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!));
+      let cursorDate = new Date(item.lastProcessedAt || item.createdAt);
+      let nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
+      if (!nextOccurrence) continue;
+      
+      let nextDate = new Date(nextOccurrence);
       let createdCount = 0;
 
       while (nextDate <= now) {
         await addExpense({
-          amountDollars: item.amount / 100,
+          amount: item.amount,
           category: item.category,
           type: item.type,
           accountId: item.accountId,
@@ -978,19 +1380,21 @@ export const useStore = create<CoreStoreState>((set, get) => ({
           createdAt: nextDate.toISOString(),
         });
         cursorDate = nextDate;
-        nextDate = new Date(calculateNextOccurrence(nextDate.toISOString(), item.recurrenceRule!));
+        const nextTime = calculateNextOccurrence(nextDate.toISOString(), item.recurrenceRule!);
+        if (!nextTime) break;
+        nextDate = new Date(nextTime);
         createdCount++;
       }
 
       if (createdCount > 0) {
-        // Move the recurrence cursor forward so future runs only create newly due instances.
-        await updateExpense(item.id, { createdAt: cursorDate.toISOString() });
+        await updateExpense(item.id, { lastProcessedAt: cursorDate.toISOString() });
       }
     }
   },
 
-  getPinnedNotes: () => {
-    return get().notes.filter((n) => n.pinned);
+  resetRateLimits: async () => {
+    // No-op for now, can be implemented with a debounce store if needed
+    // localStorage.removeItem('titan-rate-limiter');
   },
 }));
 

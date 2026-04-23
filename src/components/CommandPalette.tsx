@@ -38,11 +38,14 @@ export function CommandPalette() {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
-      if (e.key === 'Escape') close();
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault();
+        close();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [close]);
+  }, [close, isOpen]);
 
   const results = useMemo<CommandPaletteItem[]>(() => {
     if (!query.trim()) {
@@ -101,10 +104,17 @@ export function CommandPalette() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 pt-[15vh] px-4 backdrop-blur-md animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 pt-[15vh] px-4 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={close}
+    >
       <div 
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command Palette"
         className="w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-card/70 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200"
         onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-white/5 px-6 py-5">
           <Search className="h-5 w-5 text-muted-foreground" />

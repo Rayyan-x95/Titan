@@ -191,17 +191,42 @@ export function calculateMonthlyExpense(expenses: Expense[], now = new Date()): 
     .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 }
 
-export function calculateBudgetUsage(budget: Budget, expenses: Expense[]): BudgetUsage {
-  const spent = expenses
+export function validateBudget(budget: Partial<Budget>): string[] {
+  const errors: string[] = [];
+  if (!budget.category || budget.category.trim().length === 0) {
+    errors.push('Category is required.');
+  }
+  if (budget.limit === undefined || budget.limit < 0) {
+    errors.push('Limit must be a non-negative number.');
+  }
+  if (budget.period !== 'weekly' && budget.period !== 'monthly') {
+    errors.push('Period must be weekly or monthly.');
+  }
+  return errors;
+}
+
+export function calculateBudgetUsage(budget: Budget, expenses: Expense[], now = new Date()): BudgetUsage {
+  const range: FinanceRange = budget.period === 'weekly' ? 'week' : 'month';
+  const filteredExpenses = filterExpensesByRange(expenses, range, now);
+
+  const spent = filteredExpenses
     .filter((expense) => expense.type === 'expense' && expense.category === budget.category)
     .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 
-  const limit = normalizeCents(budget.limit);
+  const limit = normalizePositiveCents(budget.limit);
   const remaining = safeSubCents(limit, spent);
   const overflow = remaining < 0 ? Math.abs(remaining) : 0;
-  const percent = limit > 0 ? (spent / limit) * 100 : 0;
+  
+  // Guard against division by zero and handle 100%+ cases gracefully
+  const percent = limit > 0 ? Math.min(1000, (spent / limit) * 100) : spent > 0 ? 100 : 0;
 
-  return { spent, limit, remaining, overflow, percent };
+  return { 
+    spent: normalizePositiveCents(spent), 
+    limit, 
+    remaining, 
+    overflow: normalizePositiveCents(overflow), 
+    percent: Number.isFinite(percent) ? percent : 0 
+  };
 }
 
 export function buildBudgetSuggestions(profile: OnboardingProfile, existingBudgets: Budget[]): Budget[] {
@@ -226,7 +251,27 @@ export function buildBudgetSuggestions(profile: OnboardingProfile, existingBudge
     .map(([category, split]) => ({
       id: `onboarding-${category.toLowerCase()}`,
       category,
-      limit: Math.max(1, Math.round(targetMonthlyLimit * split)),
+      limit: normalizePositiveCents(Math.round(targetMonthlyLimit * split)),
       period: 'monthly' as const,
     }));
+}
+
+export function normalizeAccount(payload: any): Account {
+  const rawName = typeof payload.name === 'string' ? payload.name.trim() : '';
+  return {
+    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
+    name: rawName || 'Untitled Account',
+    balance: typeof payload.balance === 'number' ? normalizeCents(payload.balance) : 0,
+    createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : new Date().toISOString(),
+  };
+}
+
+export function normalizeBudget(payload: any): Budget {
+  const rawCategory = typeof payload.category === 'string' ? payload.category.trim() : '';
+  return {
+    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
+    category: rawCategory || 'Uncategorized',
+    limit: typeof payload.limit === 'number' ? normalizePositiveCents(payload.limit) : 0,
+    period: payload.period === 'weekly' ? 'weekly' : 'monthly',
+  };
 }

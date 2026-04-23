@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Lock, Unlock, Delete } from 'lucide-react';
-import { useSettings } from '@/core/settings';
+import { useSettings, hashPin } from '@/core/settings';
 import { cn } from '@/utils/cn';
 
 export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   const { appPin, pinEnabled } = useSettings();
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!pinEnabled || !appPin) {
@@ -14,18 +21,23 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     }
   }, [pinEnabled, appPin, onUnlock]);
 
-  const handlePress = (num: string) => {
+  const handlePress = async (num: string) => {
     if (input.length >= 4) return;
     setError(false);
     const next = input + num;
     setInput(next);
-    
-    if (next.length === 4) {
-      if (next === appPin) {
+
+    if (next.length >= 4) {
+      const hashedInput = await hashPin(next);
+      if (hashedInput === appPin) {
         onUnlock();
       } else {
         setError(true);
-        setTimeout(() => setInput(''), 500);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setInput('');
+          setError(false);
+        }, 3000);
       }
     }
   };
@@ -84,6 +96,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           </button>
           <button
             onClick={handleDelete}
+            aria-label="Delete digit"
             className="flex h-16 w-16 items-center justify-center rounded-2xl text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-all"
           >
             <Delete className="h-6 w-6" />

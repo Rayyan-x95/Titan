@@ -1,25 +1,30 @@
 import { useMemo, useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Landmark,
-  NotebookPen,
-  SquareCheckBig,
-  ArrowRight,
+  Users,
   Activity,
-  Plus,
+  Zap,
+  ArrowRight,
   CheckCircle2,
   Clock,
+  Landmark,
   TrendingDown,
-  Zap,
-  ChevronRight,
   Search,
+  ChevronRight,
+  NotebookPen,
+  SquareCheckBig,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 import { PageShell } from '@/components/PageShell';
 import { Card } from '@/components/ui/Card';
 import { useStore } from '@/core/store';
 import { useSettings, formatMoney } from '@/core/settings';
 import type { Note, Task } from '@/core/store/types';
 import { useSeo } from '@/seo';
+import { cn } from '@/utils/cn';
+import { parseQuickCapture } from '@/lib/core/parserEngine';
+import { calculateTotalOwed } from '@/lib/core/splitEngine';
 import { DashboardCard } from './DashboardCard';
 import { QuickActions } from './QuickActions';
 
@@ -114,58 +119,6 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-// ─── Quick Capture Parser ─────────────────────────────────────────────────────
-
-interface ParsedCapture {
-  title: string;
-  amountDollars?: number; // already in dollars for addExpense
-  dueDate?: string;
-}
-
-export function parseQuickCapture(raw: string): ParsedCapture {
-  const lower = raw.toLowerCase();
-  let amountDollars: number | undefined;
-  let dueDate: string | undefined;
-
-  // Match currency amounts like ₹500, $10.50, 200
-  const amountMatch = raw.match(/(?:₹|\$|€|£)?\s*(\d+(?:\.\d{1,2})?)/);
-  if (amountMatch) {
-    amountDollars = parseFloat(amountMatch[1]);
-  }
-
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  if (lower.includes('tomorrow')) {
-    dueDate = toLocalDateString(tomorrow);
-  } else if (lower.includes('today')) {
-    dueDate = toLocalDateString(new Date());
-  } else {
-    // Match "on 25th", "on 25", "on 3rd"
-    const dayMatch = lower.match(/on\s+(\d+)(?:st|nd|rd|th)?/);
-    if (dayMatch) {
-      const day = parseInt(dayMatch[1], 10);
-      const date = new Date();
-      if (day >= 1 && day <= 31) {
-        if (day < date.getDate()) {
-          date.setMonth(date.getMonth() + 1);
-        }
-        date.setDate(day);
-        dueDate = toLocalDateString(date);
-      }
-    }
-  }
-
-  // Strip amount and date keywords to get a clean title
-  const cleanTitle = raw
-    .replace(/(?:₹|\$|€|£)?\s*\d+(?:\.\d{1,2})?/, '')
-    .replace(/tomorrow|today/gi, '')
-    .replace(/on\s+(\d+)(?:st|nd|rd|th)?/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return { title: cleanTitle || raw, amountDollars, dueDate };
-}
 
 // ─── Quick Capture Component ──────────────────────────────────────────────────
 
@@ -194,16 +147,25 @@ function QuickCapture() {
         dueDate: parsed.dueDate,
       });
 
-      if (parsed.amountDollars !== undefined) {
+      if (parsed.amount !== undefined) {
         await addExpense({
-          amountDollars: parsed.amountDollars,
-          category: 'Uncategorized',
+          amount: parsed.amount,
+          category: parsed.category,
+          type: parsed.type,
           linkedTaskId: task.id,
+          note: parsed.note,
         });
       }
 
       setValue('');
       setStatus('success');
+      
+      const today = new Date().toISOString().split('T')[0];
+      await useStore.getState().updateSnapshot(today, 'task', 1);
+      if (parsed.amount !== undefined) {
+        await useStore.getState().updateSnapshot(today, 'expense', parsed.amount);
+      }
+
       setTimeout(() => setStatus('idle'), 1800);
     } catch {
       setStatus('error');
@@ -238,7 +200,7 @@ function QuickCapture() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Capture anything… 'Buy groceries ₹500 tomorrow'"
+        placeholder={`Capture anything… 'Buy groceries ${useSettings.getState().currency === 'INR' ? '₹' : '$'}500 tomorrow'`}
         className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         aria-label="Quick capture"
         autoComplete="off"
@@ -373,6 +335,84 @@ function ContinueCard({ item }: { item: ContinueItem }) {
   );
 }
 
+// ─── Snapshot Card ────────────────────────────────────────────────────────────
+
+function SnapshotCard() {
+  const navigate = useNavigate();
+  const snapshots = useStore(state => state.dailySnapshots);
+  const tasks = useStore(state => state.tasks);
+  const notes = useStore(state => state.notes);
+  const expenses = useStore(state => state.expenses);
+  const currency = useSettings(s => s.currency);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const snapshot = snapshots.find(s => s.date === today);
+
+  const completedCount = tasks.filter(t => t.status === 'done' && t.createdAt.startsWith(today)).length;
+  const spentToday = expenses.filter(e => e.type === 'expense' && e.createdAt.startsWith(today)).reduce((sum, e) => sum + e.amount, 0);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative group cursor-pointer overflow-hidden rounded-[2.5rem] border border-primary/20 bg-card p-8 shadow-glass transition-all hover:shadow-glow-sm"
+      onClick={() => navigate('/timeline')}
+    >
+      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
+      
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/80">Life Snapshot</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{getGreeting()}, Rayyan</h2>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-glow-sm">
+            <Activity className="h-6 w-6" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tasks</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-foreground">{completedCount}</span>
+              <span className="text-[10px] font-bold text-emerald-500 uppercase">Done</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Notes</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-foreground">{notes.filter(n => n.createdAt.startsWith(today)).length}</span>
+              <span className="text-[10px] font-bold text-blue-500 uppercase">New</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Spending</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-foreground">{formatMoney(spentToday, currency)}</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Energy</p>
+            <div className="flex items-baseline gap-2">
+              <Zap className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-black text-foreground uppercase">Stable</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-center justify-between rounded-2xl bg-secondary/30 p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <p className="text-xs font-bold text-muted-foreground">Viewing your life narrative in Feed</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-primary transition-transform group-hover:translate-x-1" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Mini Insight Card ────────────────────────────────────────────────────────
 
 function InsightCard({
@@ -427,6 +467,7 @@ export function DashboardPage() {
   const notes = useStore((s) => s.notes);
   const expenses = useStore((s) => s.expenses);
   const budgets = useStore((s) => s.budgets);
+  const sharedExpenses = useStore((s) => s.sharedExpenses);
 
   // ── Derived data (memoized) ──────────────────────────────────────────────
   const todayTasks = useMemo(() => getTodayTasks(tasks), [tasks]);
@@ -435,6 +476,7 @@ export function DashboardPage() {
   const completedToday = useMemo(() => getCompletedTodayTasks(tasks), [tasks]);
   const recentNotes = useMemo(() => getRecentNotes(notes), [notes]);
   const todaySpendCents = useMemo(() => getTodayExpensesCents(expenses), [expenses]);
+  const totalOwed = useMemo(() => calculateTotalOwed(sharedExpenses), [sharedExpenses]);
 
   // Budget progress
   const budgetSummary = useMemo(() => {
@@ -492,21 +534,30 @@ export function DashboardPage() {
 
   return (
     <PageShell
-      title="Dashboard"
-      description={`${greeting}. Here's your day at a glance.`}
+      title=""
+      description=""
     >
+      {/* ── Hero Snapshot ────────────────────────────────────────────────── */}
+      <SnapshotCard />
+
       {/* ── Date chip ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2">
-        <span className="rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
+      <div className="flex items-center justify-between">
+        <span className="rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground backdrop-blur-sm">
           {today}
         </span>
+        <button 
+          onClick={() => navigate('/timeline')}
+          className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+        >
+          View Story
+        </button>
       </div>
 
       {/* ── Quick Capture ───────────────────────────────────────────────────── */}
       <section aria-label="Quick capture">
         <QuickCapture />
         <p className="mt-2 px-1 text-[11px] text-muted-foreground/60">
-          Type a task, add an amount for expenses, mention &apos;today&apos; or &apos;tomorrow&apos; for due dates
+          Type a task, add an amount (e.g. {useSettings.getState().currency === 'INR' ? '₹' : '$'}500) for expenses, mention &apos;today&apos; or &apos;tomorrow&apos; for due dates
         </p>
       </section>
 
@@ -537,6 +588,45 @@ export function DashboardPage() {
           />
         </div>
       </section>
+
+      {/* ── Shared Balances ─────────────────────────────────────────────────── */}
+      {totalOwed !== 0 && (
+        <section aria-label="Shared balances">
+          <div 
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate('/split')}
+            onKeyDown={(e) => e.key === 'Enter' && navigate('/split')}
+            className="group cursor-pointer"
+          >
+            <Card className="relative overflow-hidden border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Shared Balance</p>
+                    <p className={cn(
+                      "mt-1 text-2xl font-black tracking-tight",
+                      totalOwed > 0 ? "text-emerald-400" : "text-rose-400"
+                    )}>
+                      {totalOwed > 0 ? '+' : ''}{formatMoney(totalOwed, currency)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary/80">
+                    {totalOwed > 0 ? 'To receive' : 'To pay'}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* ── Priority Focus ─────────────────────────────────────────────────── */}
       {priorityTasks.length > 0 && (

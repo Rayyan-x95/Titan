@@ -24,9 +24,22 @@ const ShareTargetPage = lazy(() =>
 const OnboardingPage = lazy(() =>
   import('@/modules/onboarding/OnboardingPage').then((module) => ({ default: module.OnboardingPage })),
 );
+const TimelinePage = lazy(() =>
+  import('@/modules/timeline/TimelineView').then((module) => ({ default: module.TimelineView })),
+);
 
 function OnboardingGate() {
+  const hydrated = useStore((state) => state.hydrated);
   const onboarding = useStore((state) => state.onboarding);
+
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   const hasResolvedOnboarding = Boolean(onboarding.completedAt || onboarding.skippedAt);
 
   if (!hasResolvedOnboarding) {
@@ -49,6 +62,7 @@ export default function App() {
         <Route path="onboarding" element={<OnboardingPage />} />
         <Route element={<OnboardingGate />}>
           <Route index element={<DashboardPage />} />
+          <Route path="timeline" element={<TimelinePage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="notes" element={<NotesPage />} />
           <Route path="finance" element={<FinancePage />} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useId } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -17,6 +17,7 @@ interface DropdownProps<T extends string> {
 }
 
 export function Dropdown<T extends string>({ label, value, options, onChange, className }: DropdownProps<T>) {
+  const reactId = useId();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,7 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
     target?.focus();
   }, [activeIndex, open]);
 
-  const menuId = `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-menu`;
+  const menuId = `dropdown-${reactId}-menu`;
 
   const focusItem = (index: number) => {
     const bounded = Math.max(0, Math.min(options.length - 1, index));

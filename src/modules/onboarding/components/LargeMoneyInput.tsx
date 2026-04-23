@@ -1,4 +1,5 @@
 import { CircleDollarSign } from 'lucide-react';
+import { useSettings } from '@/core/settings';
 
 interface LargeMoneyInputProps {
   value: string;
@@ -13,7 +14,9 @@ export function LargeMoneyInput({ value, placeholder, onChange, helper, autoFocu
     <div className="mx-auto max-w-xl text-center">
       <CircleDollarSign className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
       <label className="mt-8 flex items-center justify-center gap-3">
-        <span className="text-5xl font-black tracking-tight text-primary sm:text-7xl">₹</span>
+        <span className="text-5xl font-black tracking-tight text-primary sm:text-7xl">
+          {useSettings.getState().currency === 'INR' ? '₹' : '$'}
+        </span>
         <input
           autoFocus={autoFocus}
           inputMode="decimal"

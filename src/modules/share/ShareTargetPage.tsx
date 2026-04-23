@@ -271,23 +271,29 @@ export function ShareTargetPage() {
               <label className="ml-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Account
               </label>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {accounts.map((account) => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    onClick={() => updateForm({ accountId: account.id })}
-                    className={cn(
-                      'h-12 rounded-xl border px-3 text-[10px] font-bold uppercase tracking-wider transition-all',
-                      form.accountId === account.id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-background/50 text-muted-foreground hover:bg-secondary',
-                    )}
-                  >
-                    {account.name}
-                  </button>
-                ))}
-              </div>
+              {accounts.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  No accounts found. Create one in Settings.
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {accounts.map((account) => (
+                    <button
+                      key={account.id}
+                      type="button"
+                      onClick={() => updateForm({ accountId: account.id })}
+                      className={cn(
+                        'h-12 rounded-xl border px-3 text-[10px] font-bold uppercase tracking-wider transition-all',
+                        form.accountId === account.id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-background/50 text-muted-foreground hover:bg-secondary',
+                      )}
+                    >
+                      {account.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {submissionError && (

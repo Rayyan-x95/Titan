@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "dexie": "^4.4.2",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.539.0",

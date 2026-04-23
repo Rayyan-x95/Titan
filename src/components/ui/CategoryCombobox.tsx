@@ -38,8 +38,9 @@ export function CategoryCombobox({
     ? options.filter((option) => option.toLowerCase().includes(trimmedQuery.toLowerCase()))
     : options;
   const canCreateNew = trimmedQuery.length > 0 && !options.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
+  const maxIndex = canCreateNew ? filtered.length : filtered.length - 1;
   const showDropdown = open && (filtered.length > 0 || canCreateNew);
-  const activeDescendantId = open && activeIndex >= 0 && filtered[activeIndex]
+  const activeDescendantId = open && activeIndex >= 0 && (activeIndex < filtered.length ? filtered[activeIndex] : true)
     ? `${listboxId}-option-${activeIndex}`
     : undefined;
 
@@ -93,7 +94,7 @@ export function CategoryCombobox({
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       setOpen(true);
-      setActiveIndex((current) => Math.min(filtered.length - 1, current + 1));
+      setActiveIndex((current) => Math.min(maxIndex, current + 1));
       return;
     }
 
@@ -104,9 +105,13 @@ export function CategoryCombobox({
     }
 
     if (event.key === 'Enter') {
-      if (open && activeIndex >= 0 && filtered[activeIndex]) {
+      if (open && activeIndex >= 0) {
         event.preventDefault();
-        commit(filtered[activeIndex]);
+        if (activeIndex < filtered.length) {
+          commit(filtered[activeIndex]);
+        } else if (canCreateNew) {
+          commit(trimmedQuery);
+        }
         return;
       }
 

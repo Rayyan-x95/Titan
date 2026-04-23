@@ -55,6 +55,9 @@ export function BottomSheet({
           />
           <motion.div
             ref={contentRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? "bs-title" : undefined}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -69,13 +72,14 @@ export function BottomSheet({
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
               {title ? (
-                <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+                <h2 id="bs-title" className="text-lg font-semibold text-foreground">{title}</h2>
               ) : (
                 <div />
               )}
               {showClose && (
                 <button
                   onClick={onClose}
+                  aria-label="Close sheet"
                   className="rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
                 >
                   <X className="h-5 w-5" />

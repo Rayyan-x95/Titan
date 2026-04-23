@@ -113,6 +113,7 @@ function AddTaskForm({ onDone }: { onDone: () => void }) {
       <input
         id="qa-task-due"
         type="date"
+        aria-label="Task due date"
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
         className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -200,12 +201,12 @@ function AddExpenseForm({ onDone }: { onDone: () => void }) {
   const addExpense = useStore((s) => s.addExpense);
 
   const submit = async () => {
-    const parsed = parseFloat(amount);
-    if (Number.isNaN(parsed) || parsed <= 0) return;
+    const parsedAmount = parseFloat(amount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
     setLoading(true);
     try {
       await addExpense({
-        amountDollars: parsed,
+        amountDollars: parsedAmount,
         category: category.trim() || 'Uncategorized',
       });
       setSuccess(true);

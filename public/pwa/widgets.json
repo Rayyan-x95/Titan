@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "widgets": [
+    {
+      "id": "today-tasks",
+      "name": "Today's Tasks",
+      "description": "Quick view of today's tasks",
+      "icon": "tasks",
+      "color": "#3b82f6",
+      "actions": [
+        { "type": "view", "url": "/tasks" },
+        { "type": "add", "url": "/tasks?new=1" }
+      ]
+    },
+    {
+      "id": "weekly-summary",
+      "name": "Weekly Summary",
+      "description": "Weekly financial and task summary",
+      "icon": "chart",
+      "color": "#10b981",
+      "actions": [
+        { "type": "view", "url": "/finance?week=1" },
+        { "type": "add-expense", "url": "/finance?new=1" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "name": "Timeline",
+      "description": "Your life timeline view",
+      "icon": "calendar",
+      "color": "#8b5cf6",
+      "actions": [
+        { "type": "view", "url": "/timeline" }
+      ]
+    },
+    {
+      "id": "quick-add",
+      "name": "Quick Add",
+      "description": "Quickly add tasks and expenses",
+      "icon": "plus",
+      "color": "#f59e0b",
+      "actions": [
+        { "type": "capture", "url": "/" }
+      ]
+    }
+  ]
+}

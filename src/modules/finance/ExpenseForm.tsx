@@ -5,6 +5,7 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { Dropdown } from '@/components/ui/Dropdown';
 import type { Expense, Task, Account, Note } from '@/core/store/types';
 import { cn } from '@/utils/cn';
+import { useSettings } from '@/core/settings';
 
 export interface ExpenseFormValues {
   amountDollars: number;
@@ -21,6 +22,7 @@ export interface ExpenseFormValues {
   };
   linkedTaskId?: string;
   linkedNoteId?: string;
+  area: 'work' | 'personal' | 'health' | 'finance' | 'social';
 }
 
 interface ExpenseFormProps {
@@ -59,6 +61,7 @@ const defaultValues: ExpenseFormValues = {
   date: toInputDateString(new Date()),
   tags: [],
   isRecurring: false,
+  area: 'finance',
 };
 
 export function ExpenseForm({
@@ -102,6 +105,7 @@ export function ExpenseForm({
       recurrenceRule: initialValues.recurrenceRule,
       linkedTaskId: initialValues.linkedTaskId,
       linkedNoteId: initialValues.linkedNoteId,
+      area: (initialValues as any).area || 'finance',
     });
     setSubmissionError(null);
   }, [initialValues, open, accounts]);
@@ -114,13 +118,20 @@ export function ExpenseForm({
       setSubmissionError('Amount must be greater than 0.');
       return;
     }
-    if (!values.category.trim()) {
-      setSubmissionError('Category is required.');
+    if (!values.category.trim() && values.type === 'expense') {
+      setSubmissionError('Category is required for expenses.');
       return;
     }
+    
+    // Default category for income if left empty
+    const finalValues = {
+      ...values,
+      category: values.category.trim() || (values.type === 'income' ? 'Income' : values.category)
+    };
+
     setSubmissionError(null);
     try {
-      await onSubmit(values);
+      await onSubmit(finalValues);
       onOpenChange(false);
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : 'Failed to save transaction.');
@@ -131,6 +142,7 @@ export function ExpenseForm({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 py-4 backdrop-blur-md sm:items-center">
       <button
         type="button"
+        aria-label="Close expense form"
         className="absolute inset-0 cursor-default"
         onClick={() => onOpenChange(false)}
       />
@@ -167,7 +179,9 @@ export function ExpenseForm({
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Amount</span>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">
+                    {useSettings.getState().currency === 'INR' ? '₹' : '$'}
+                  </span>
                   <input
                     autoFocus
                     type="number"
@@ -210,12 +224,28 @@ export function ExpenseForm({
                 />
               </div>
 
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Date</label>
                 <DatePicker
                   value={values.date}
                   onChange={(date) => setValues(v => ({ ...v, date: date ?? toInputDateString(new Date()) }))}
                   clearable={false}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Life Area</label>
+                <Dropdown
+                  label="Area"
+                  value={values.area}
+                  onChange={(val) => setValues(v => ({ ...v, area: val as any }))}
+                  options={[
+                    { label: 'Work', value: 'work' },
+                    { label: 'Personal', value: 'personal' },
+                    { label: 'Health', value: 'health' },
+                    { label: 'Finance', value: 'finance' },
+                    { label: 'Social', value: 'social' },
+                  ]}
                 />
               </div>
             </div>

@@ -6,10 +6,13 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { LockScreen } from '@/components/LockScreen';
 import { useSettings } from '@/core/settings';
 import { APP_VERSION } from '@/core/version';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { cn } from '@/utils/cn';
 
 export function Layout() {
   const { compactMode, animations, pinEnabled, appPin } = useSettings();
   const [isUnlocked, setIsUnlocked] = useState(!pinEnabled || !appPin);
+  const scrollDirection = useScrollDirection();
 
   // Re-check lock status if settings change
   useEffect(() => {
@@ -40,7 +43,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-transparent text-foreground relative overflow-hidden">
       {!isUnlocked && <LockScreen onUnlock={() => setIsUnlocked(true)} />}
-      <CommandPalette />
+      {isUnlocked && <CommandPalette />}
       {/* Ambient background glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-[-8%] left-[-5%] w-[45%] h-[45%] rounded-full bg-primary/15 blur-[140px] animate-pulse-slow" />
@@ -54,22 +57,27 @@ export function Layout() {
         Skip to main content
       </a>
 
-      <header className="fixed top-4 left-4 right-4 z-40 mx-auto max-w-5xl rounded-2xl border border-primary/20 bg-background/50 backdrop-blur-xl shadow-glass">
-        <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+      <header 
+        className={cn(
+          "fixed top-4 left-4 right-4 z-40 mx-auto max-w-5xl rounded-2xl border border-primary/20 bg-background/50 backdrop-blur-xl shadow-glass transition-all duration-500 ease-in-out",
+          scrollDirection === 'down' ? "-translate-y-28 opacity-0" : "translate-y-0 opacity-100"
+        )}
+      >
+        <div className="mx-auto max-w-4xl flex items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <img
               src="/icons/titan_logo_icon_transparent.png"
               alt="Titan logo"
-              className="h-9 w-9 object-contain drop-shadow-md"
+              className="h-8 w-8 object-contain drop-shadow-md"
             />
             <div>
-              <h1 className="text-base font-bold tracking-tight text-gradient leading-none">Titan</h1>
-              <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+              <h1 className="text-sm font-bold tracking-tight text-gradient leading-none">Titan</h1>
+              <p className="text-[9px] text-muted-foreground font-medium mt-0.5">
                 v{APP_VERSION}
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-primary/25 bg-primary/8 px-3 py-1 text-[11px] font-semibold text-primary/90 tracking-wide">
+          <span className="rounded-full border border-primary/25 bg-primary/8 px-2.5 py-0.5 text-[10px] font-semibold text-primary/90 tracking-wide">
             Offline Ready
           </span>
         </div>

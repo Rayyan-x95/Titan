@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 import { cn } from '@/utils/cn';
 
 interface PremiumInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -13,7 +13,9 @@ export const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(func
   { label, error, prefix, suffix, size = 'default', className, id, ...props },
   ref,
 ) {
-  const inputId = id ?? `titan-input-${label?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const reactId = useId();
+  const inputId = id ?? reactId;
+  const errorId = `${inputId}-error`;
   const isLarge = size === 'large';
 
   return (
@@ -50,6 +52,7 @@ export const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(func
             'w-full bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none',
             isLarge ? 'text-3xl font-semibold' : 'text-base',
           )}
+          aria-describedby={error ? errorId : undefined}
           placeholder=" "
           {...props}
         />
@@ -60,7 +63,7 @@ export const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(func
         )}
       </div>
       {error && (
-        <p className="mt-2 text-sm text-destructive">{error}</p>
+        <p id={errorId} className="mt-2 text-sm text-destructive">{error}</p>
       )}
     </div>
   );

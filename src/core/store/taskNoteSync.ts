@@ -91,10 +91,13 @@ export function syncNoteNoteReferences(note: Note, noteStore: Note[]) {
 }
 
 export function clearTaskNoteReference(taskId: string, noteStore: Note[]) {
-  return noteStore.map((note) => ({
-    ...normalizeNoteFields(note),
-    linkedTaskIds: note.linkedTaskIds!.filter((linkedTaskId) => linkedTaskId !== taskId),
-  }));
+  return noteStore.map((note) => {
+    const fields = normalizeNoteFields(note);
+    return {
+      ...fields,
+      linkedTaskIds: fields.linkedTaskIds.filter((linkedTaskId) => linkedTaskId !== taskId),
+    };
+  });
 }
 
 export function clearTasksForDeletedNote(noteId: string, taskStore: Task[]) {
@@ -109,10 +112,13 @@ export function clearTasksForDeletedNote(noteId: string, taskStore: Task[]) {
 }
 
 export function clearNoteBacklinks(noteId: string, noteStore: Note[]) {
-  return noteStore.map((note) => ({
-    ...normalizeNoteFields(note),
-    linkedNoteIds: note.linkedNoteIds!.filter((id) => id !== noteId),
-  }));
+  return noteStore.map((note) => {
+    const fields = normalizeNoteFields(note);
+    return {
+      ...fields,
+      linkedNoteIds: fields.linkedNoteIds.filter((id) => id !== noteId),
+    };
+  });
 }
 
 export function reconcileTaskNoteReferences(tasks: Task[], notes: Note[]) {

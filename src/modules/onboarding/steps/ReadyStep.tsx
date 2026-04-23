@@ -1,6 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import type { OnboardingStepProps } from '../types';
-import { formatRupees } from '../onboardingFlow';
+import { formatOnboardingMoney } from '../onboardingFlow';
+import { useSettings } from '@/core/settings';
 
 export default function ReadyStep({ firstName, incomeCents, expenseCents, profile }: OnboardingStepProps) {
   const monthlyRoom = incomeCents - expenseCents;
@@ -19,12 +20,12 @@ export default function ReadyStep({ firstName, incomeCents, expenseCents, profil
       <div className="mx-auto mt-8 grid max-w-xl gap-px overflow-hidden rounded-lg border border-border/70 bg-border/70 text-left sm:grid-cols-3">
         <div className="bg-background/75 p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Income</p>
-          <p className="mt-2 text-lg font-black text-foreground">{formatRupees(incomeCents)}</p>
+          <p className="mt-2 text-lg font-black text-foreground">{formatOnboardingMoney(incomeCents, useSettings.getState().currency)}</p>
         </div>
         <div className="bg-background/75 p-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Room</p>
           <p className={monthlyRoom >= 0 ? 'mt-2 text-lg font-black text-emerald-300' : 'mt-2 text-lg font-black text-amber-300'}>
-            {formatRupees(monthlyRoom)}
+            {formatOnboardingMoney(monthlyRoom, useSettings.getState().currency)}
           </p>
         </div>
         <div className="bg-background/75 p-4">

@@ -19,6 +19,11 @@ export interface BalanceEntry {
   balance: number;
 }
 
+interface SharedExpenseLike {
+  paidBy: string;
+  participants: Array<{ id: string; amount: number }>;
+}
+
 function normalizeCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.trunc(value);
@@ -84,16 +89,36 @@ export function validateSplitShares(totalAmount: number, shares: SplitShare[]): 
   return total === sum;
 }
 
+export function validateBalances(balances: BalanceEntry[]): boolean {
+  const sum = balances.reduce((accumulator, entry) => accumulator + normalizeCents(entry.balance), 0);
+  return Math.abs(sum) < 2; // Allow 1-2 cents rounding error across large lists
+}
+
 export function computeSettlements(balances: BalanceEntry[]): Settlement[] {
+  // First ensure we are working with normalized integer cents
   const debtors = balances
-    .filter((entry) => entry.balance < 0)
-    .map((entry) => ({ ...entry, balance: Math.abs(normalizeCents(entry.balance)) }))
+    .filter((entry) => normalizeCents(entry.balance) < 0)
+    .map((entry) => ({ id: entry.id, balance: Math.abs(normalizeCents(entry.balance)) }))
     .sort((left, right) => right.balance - left.balance);
 
   const creditors = balances
-    .filter((entry) => entry.balance > 0)
-    .map((entry) => ({ ...entry, balance: normalizeCents(entry.balance) }))
+    .filter((entry) => normalizeCents(entry.balance) > 0)
+    .map((entry) => ({ id: entry.id, balance: normalizeCents(entry.balance) }))
     .sort((left, right) => right.balance - left.balance);
+
+  const totalDebt = debtors.reduce((sum, d) => sum + d.balance, 0);
+  const totalCredit = creditors.reduce((sum, c) => sum + c.balance, 0);
+
+  // If there's a slight mismatch due to rounding in upstream logic, 
+  // adjust the largest debtor/creditor to ensure the settlement can zero out.
+  if (totalDebt !== totalCredit && totalDebt > 0 && totalCredit > 0) {
+    const diff = totalDebt - totalCredit;
+    if (diff > 0) {
+      creditors[0].balance += diff;
+    } else {
+      debtors[0].balance += Math.abs(diff);
+    }
+  }
 
   const settlements: Settlement[] = [];
   let debtorIndex = 0;
@@ -119,6 +144,8 @@ export function computeSettlements(balances: BalanceEntry[]): Settlement[] {
 
 export function applySettlement(balances: BalanceEntry[], settlement: Settlement): BalanceEntry[] {
   const amount = normalizeCents(settlement.amount);
+  if (amount <= 0) return [...balances];
+  
   return balances.map((entry) => {
     if (entry.id === settlement.from) {
       return { ...entry, balance: normalizeCents(entry.balance) + amount };
@@ -128,4 +155,23 @@ export function applySettlement(balances: BalanceEntry[], settlement: Settlement
     }
     return entry;
   });
+}
+
+export function calculateTotalOwed(sharedExpenses: SharedExpenseLike[], userId = 'user'): number {
+  // Net amount across all shared expenses for the selected user.
+  let total = 0;
+  sharedExpenses.forEach((expense) => {
+    if (expense.paidBy === userId) {
+      // User paid, they are owed what others are sharing
+      const othersShare = expense.participants
+        .filter((participant) => participant.id !== userId)
+        .reduce((sum, participant) => sum + normalizeCents(participant.amount), 0);
+      total += normalizeCents(othersShare);
+    } else {
+      // Someone else paid, user might owe them
+      const userShare = expense.participants.find((participant) => participant.id === userId)?.amount ?? 0;
+      total -= normalizeCents(userShare);
+    }
+  });
+  return normalizeCents(total);
 }

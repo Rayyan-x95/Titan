@@ -17,12 +17,12 @@ import { useSeo } from '@/seo';
 import { OnboardingControls } from './components/OnboardingControls';
 import { OnboardingStepper } from './components/OnboardingStepper';
 import {
-  centsToRupees,
+  centsToMoney,
   clampStep,
   getOnboardingValidationError,
   normalizeMoneyInput,
   onboardingSteps,
-  rupeesToCents,
+  moneyToCents,
   type OnboardingStepId,
 } from './onboardingFlow';
 import type { OnboardingStepProps } from './types';
@@ -30,6 +30,7 @@ import type { OnboardingStepProps } from './types';
 const stepComponents: Record<OnboardingStepId, LazyExoticComponent<ComponentType<OnboardingStepProps>>> = {
   welcome: lazy(() => import('./steps/WelcomeStep')),
   name: lazy(() => import('./steps/NameStep')),
+  phone: lazy(() => import('./steps/PhoneStep')),
   dob: lazy(() => import('./steps/DobStep')),
   income: lazy(() => import('./steps/IncomeStep')),
   expense: lazy(() => import('./steps/ExpenseStep')),
@@ -55,6 +56,7 @@ function mergeOnboardingProfile(
 function toPersistedUpdate(profile: OnboardingProfile): OnboardingUpdate {
   return {
     name: profile.name,
+    phoneNumber: profile.phoneNumber,
     dob: profile.dob,
     income: profile.income,
     avgExpense: profile.avgExpense,
@@ -84,15 +86,15 @@ export function OnboardingPage() {
   const draftRef = useRef(draft);
   const persistQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const [activeStep, setActiveStep] = useState(() => clampStep(onboarding.currentStep));
-  const [incomeInput, setIncomeInput] = useState(() => centsToRupees(onboarding.income));
-  const [expenseInput, setExpenseInput] = useState(() => centsToRupees(onboarding.avgExpense));
+  const [incomeInput, setIncomeInput] = useState(() => centsToMoney(onboarding.income));
+  const [expenseInput, setExpenseInput] = useState(() => centsToMoney(onboarding.avgExpense));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const step = onboardingSteps[activeStep];
   const StepComponent = stepComponents[step.id];
-  const incomeCents = rupeesToCents(incomeInput);
-  const expenseCents = rupeesToCents(expenseInput);
+  const incomeCents = moneyToCents(incomeInput);
+  const expenseCents = moneyToCents(expenseInput);
   const firstName = draft.name.trim().split(/\s+/)[0] || 'there';
 
   const validationError = useMemo(
@@ -163,6 +165,7 @@ export function OnboardingPage() {
       const profile = draftRef.current;
       await completeOnboarding({
         name: profile.name.trim(),
+        phoneNumber: profile.phoneNumber?.trim(),
         dob: profile.dob,
         income: incomeCents,
         avgExpense: expenseCents,
@@ -190,14 +193,14 @@ export function OnboardingPage() {
     setError(null);
     const normalized = normalizeMoneyInput(value);
     setIncomeInput(normalized);
-    persistProfile({ income: rupeesToCents(normalized) });
+    persistProfile({ income: moneyToCents(normalized) });
   };
 
   const handleExpenseInputChange = (value: string) => {
     setError(null);
     const normalized = normalizeMoneyInput(value);
     setExpenseInput(normalized);
-    persistProfile({ avgExpense: rupeesToCents(normalized) });
+    persistProfile({ avgExpense: moneyToCents(normalized) });
   };
 
   const handleGoalToggle = (goal: FinancialGoal) => {

@@ -9,13 +9,14 @@ import {
   Globe,
   Palette,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { PageShell } from '@/components/PageShell';
 import { useTheme } from '@/hooks/useTheme';
 import { useStore } from '@/core/store';
-import { useSettings } from '@/core/settings';
+import { useSettings, hashPin } from '@/core/settings';
 import type { CurrencyCode } from '@/core/settings';
 import { APP_VERSION } from '@/core/version';
 import { useSeo } from '@/seo';
@@ -36,7 +37,7 @@ function SettingsRow({ icon, title, description, action }: SettingsRowProps) {
         </div>
         <div className="space-y-0.5">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+          <p className="text-xs text-muted-foreground/90 leading-relaxed font-medium">{description}</p>
         </div>
       </div>
       <div className="shrink-0 pl-14 sm:pl-0">{action}</div>
@@ -91,6 +92,7 @@ export function SettingsPage() {
   const expenses = useStore((state) => state.expenses);
   const importBackup = useStore((state) => state.importBackup);
   const clearAll = useStore((state) => state.clearAll);
+  const recomputeSnapshots = useStore((state) => state.recomputeSnapshots);
 
   const { 
     currency, compactMode, animations, appPin, pinEnabled,
@@ -214,9 +216,18 @@ export function SettingsPage() {
             action={
               <div className="flex items-center gap-3">
                 {pinEnabled && (
-                  <Button variant="outline" size="sm" onClick={() => {
+                  <Button variant="outline" size="sm" onClick={async () => {
+                    if (appPin) {
+                      const current = window.prompt('Enter current 4-digit PIN:');
+                      if (current === null) return;
+                      const hashed = await hashPin(current);
+                      if (hashed !== appPin) {
+                        window.alert('Incorrect current PIN.');
+                        return;
+                      }
+                    }
                     const next = window.prompt('Enter new 4-digit PIN:');
-                    if (next && next.length === 4 && /^\d+$/.test(next)) setPin(next);
+                    if (next && next.length === 4 && /^\d+$/.test(next)) await setPin(next);
                     else if (next) window.alert('PIN must be 4 digits.');
                   }}>
                     Change PIN
@@ -224,15 +235,24 @@ export function SettingsPage() {
                 )}
                 <Toggle 
                   checked={pinEnabled} 
-                  onChange={(val) => {
+                  onChange={async (val) => {
                     if (val && !appPin) {
                       const next = window.prompt('Set 4-digit PIN:');
                       if (next && next.length === 4 && /^\d+$/.test(next)) {
-                        setPin(next);
+                        await setPin(next);
                         setPinEnabled(true);
                       } else {
                         window.alert('PIN must be 4 digits.');
                       }
+                    } else if (!val && appPin) {
+                      const current = window.prompt('Enter current PIN to disable:');
+                      if (current === null) return;
+                      const hashed = await hashPin(current);
+                      if (hashed !== appPin) {
+                        window.alert('Incorrect PIN.');
+                        return;
+                      }
+                      setPinEnabled(false);
                     } else {
                       setPinEnabled(val);
                     }
@@ -284,6 +304,19 @@ export function SettingsPage() {
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
                 100% Private
               </span>
+            }
+          />
+          <SettingsRow
+            icon={<RefreshCw className="h-5 w-5" />}
+            title="Recompute Snapshots"
+            description="Rebuild your daily life snapshots from existing data. Use this if the dashboard looks incorrect."
+            action={
+              <Button variant="outline" size="sm" onClick={async () => {
+                await recomputeSnapshots();
+                window.alert('Snapshots recomputed successfully.');
+              }}>
+                Recompute
+              </Button>
             }
           />
           <SettingsRow

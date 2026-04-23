@@ -267,6 +267,7 @@ export function FileUpload({ onParsed, onTextParsed }: FileUploadProps) {
         <input
           ref={fileInputRef}
           type="file"
+          aria-label="Upload transaction image or PDF"
           accept="image/*,.pdf"
           onChange={handleFileSelect}
           className="hidden"

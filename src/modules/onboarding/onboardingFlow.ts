@@ -3,6 +3,7 @@ import type { FinancialGoal, OnboardingProfile } from '@/core/store';
 export type OnboardingStepId =
   | 'welcome'
   | 'name'
+  | 'phone'
   | 'dob'
   | 'income'
   | 'expense'
@@ -29,6 +30,12 @@ export const onboardingSteps: OnboardingStepMeta[] = [
     eyebrow: 'Identity',
     title: 'What should Titan call you?',
     subtitle: 'A name is enough. Everything stays on this device.',
+  },
+  {
+    id: 'phone',
+    eyebrow: 'Contact',
+    title: 'Your phone number?',
+    subtitle: 'Completely optional. Titan stays offline and structured.',
   },
   {
     id: 'dob',
@@ -91,19 +98,19 @@ export function normalizeMoneyInput(value: string) {
   return whole;
 }
 
-export function rupeesToCents(value: string) {
+export function moneyToCents(value: string) {
   const parsed = Number.parseFloat(value.replace(/,/g, ''));
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
 }
 
-export function centsToRupees(value: number) {
+export function centsToMoney(value: number) {
   return value > 0 ? String(value / 100) : '';
 }
 
-export function formatRupees(value: number) {
-  return new Intl.NumberFormat('en-IN', {
+export function formatOnboardingMoney(value: number, currency: string = 'INR') {
+  return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
     style: 'currency',
-    currency: 'INR',
+    currency: currency,
     maximumFractionDigits: 0,
   }).format(value / 100);
 }
@@ -142,11 +149,11 @@ export function getOnboardingValidationError(
     return 'Choose a valid date to continue.';
   }
 
-  if (stepId === 'income' && rupeesToCents(incomeInput) <= 0) {
+  if (stepId === 'income' && moneyToCents(incomeInput) <= 0) {
     return 'Enter a monthly income greater than 0.';
   }
 
-  if (stepId === 'expense' && rupeesToCents(expenseInput) <= 0) {
+  if (stepId === 'expense' && moneyToCents(expenseInput) <= 0) {
     return 'Enter an average expense greater than 0.';
   }
 
