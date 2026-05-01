@@ -1,14 +1,26 @@
 {
   "name": "titan",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings=0",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write .",
+    "check:ci": "npm run typecheck && npm run lint && npm test",
+    "bench": "node scripts/bench.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -19,6 +31,7 @@
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.539.0",
     "pdfjs-dist": "^5.6.205",
+    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -40,6 +53,18 @@
     "typescript": "^5.9.2",
     "vite": "^7.0.6",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "eslint": "^8.50.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "husky": "^8.0.0",
+    "lint-staged": "^14.0.0",
+    "memoize-one": "^6.0.0"
   }
 }
