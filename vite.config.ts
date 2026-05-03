@@ -13,6 +13,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'service-worker.ts',
       manifest: false,
+      injectManifest: {
+        globIgnores: ['**/sitemap.xml', '**/robots.txt'],
+      },
       devOptions: {
         enabled: false,
       },

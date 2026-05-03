@@ -22,6 +22,13 @@ cleanupOutdatedCaches();
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // ❗ CRITICAL: bypass sitemap and robots for SEO visibility
+  // This ensures Googlebot can fetch these files directly from the network.
+  if (url.pathname === '/sitemap.xml' || url.pathname === '/robots.txt') {
+    return;
+  }
+
   const isShareTargetPost =
     event.request.method === 'POST' &&
     url.origin === self.location.origin &&
@@ -85,7 +92,11 @@ const appShellHandler = new NetworkFirst({
 });
 
 const navigationRoute = new NavigationRoute(appShellHandler, {
-  denylist: [/^\/api\//],
+  denylist: [
+    /^\/api\//,
+    /^\/sitemap\.xml$/,
+    /^\/robots\.txt$/,
+  ],
 });
 
 registerRoute(navigationRoute);
