@@ -123,15 +123,18 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
       e.linkedTaskId && deleteSet.has(e.linkedTaskId) ? { ...e, linkedTaskId: undefined } : e,
     );
 
+    const originalNotesById = new Map(get().notes.map((n) => [n.id, n]));
+    const originalExpensesById = new Map(get().expenses.map((e) => [e.id, e]));
+
     await db.transaction('rw', [db.tasks, db.notes, db.expenses], async () => {
       await db.tasks.bulkDelete(allTaskIdsToDelete);
 
-      const affectedNotes = notes.filter((n, i) => n !== get().notes[i]);
+      const affectedNotes = notes.filter((n) => n !== originalNotesById.get(n.id));
       if (affectedNotes.length > 0) {
         await db.notes.bulkPut(affectedNotes);
       }
 
-      const affectedExpenses = expenses.filter((e, i) => e !== get().expenses[i]);
+      const affectedExpenses = expenses.filter((e) => e !== originalExpensesById.get(e.id));
       if (affectedExpenses.length > 0) {
         await db.expenses.bulkPut(affectedExpenses);
       }

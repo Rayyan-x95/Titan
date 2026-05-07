@@ -50,7 +50,6 @@ export interface SystemSlice {
   ) => Promise<void>;
   recomputeSnapshots: () => Promise<void>;
   addLog: (level: SystemLog['level'], category: string, message: string) => void;
-  resetRateLimits: () => Promise<void>;
 }
 
 async function hydrateFromDatabase() {
@@ -359,7 +358,4 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     set({ dailySnapshots: snapshots });
   },
 
-  resetRateLimits: async () => {
-    // Placeholder
-  },
 });

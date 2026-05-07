@@ -144,7 +144,7 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
     priority,
     energy,
     area,
-    dueDate: toLocalDateString(sanitizeDateString(p.dueDate) || ''),
+    dueDate: toLocalDateString(sanitizeDateString(p.dueDate) || '') || undefined,
     noteId: typeof p.noteId === 'string' ? p.noteId : undefined,
     parentTaskId: typeof p.parentTaskId === 'string' ? p.parentTaskId : undefined,
     recurrence: normalizeRecurrence(p.recurrence),
@@ -182,6 +182,8 @@ export function generateNextRecurringTasks(tasks: Task[]): {
       area: item.area,
       dueDate: toLocalDateString(nextOccurrence),
       recurrence: item.recurrence,
+      tags: item.tags,
+      noteId: item.noteId,
       createdAt: now,
     });
   }

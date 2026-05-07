@@ -34,7 +34,11 @@ export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSli
   updateAccount: async (id, updates) => {
     const current = get().accounts.find((a) => a.id === id);
     if (!current) return undefined;
-    const next = { ...current, ...updates };
+    const sanitizedUpdates: Partial<Account> = { ...updates };
+    if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
+      sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
+    }
+    const next = { ...current, ...sanitizedUpdates };
     await db.accounts.put(next);
     set((state) => ({ accounts: upsertItem(state.accounts, next) }));
     return next;

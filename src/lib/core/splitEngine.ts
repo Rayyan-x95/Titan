@@ -3,7 +3,7 @@ export interface SplitParticipant {
   weight?: number;
 }
 
-import { safeAddCents, safeSubCents } from './financeEngine';
+import { safeAddCents, safeSubCents, normalizeCents } from './financeEngine';
 
 export interface SplitShare {
   id: string;
@@ -24,11 +24,6 @@ export interface BalanceEntry {
 interface SharedExpenseLike {
   paidBy: string;
   participants: Array<{ id: string; amount: number }>;
-}
-
-function normalizeCents(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.trunc(value);
 }
 
 export function splitEqual(totalAmount: number, participants: SplitParticipant[]): SplitShare[] {

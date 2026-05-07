@@ -8,7 +8,6 @@ import {
   validateNoteReferences,
 } from '../taskNoteSync';
 import { normalizeNote } from '@/lib/core/noteEngine';
-import { upsertItem } from '../utils';
 import { toLocalDateString } from '@/utils/date';
 
 export interface NoteSlice {
@@ -23,16 +22,23 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
 
   addNote: async (input) => {
     const note = normalizeNote(input);
-    // Note: syncNoteNoteReferences is called here but results are currently not used in addNote.
-    // If we want to support backlinks for newly added notes, we should update other notes too.
-    syncNoteNoteReferences(note, get().notes);
+    const updatedNotes = syncNoteNoteReferences(note, get().notes);
 
     await db.transaction('rw', [db.notes], async () => {
       await db.notes.put(note);
+      // Persist backlink changes to other notes
+      const touchedNotes = updatedNotes.filter(
+        (n) =>
+          n.id !== note.id &&
+          n.linkedNoteIds !== get().notes.find((on) => on.id === n.id)?.linkedNoteIds,
+      );
+      if (touchedNotes.length > 0) {
+        await db.notes.bulkPut(touchedNotes);
+      }
     });
 
-    set((state) => ({
-      notes: upsertItem(state.notes, note),
+    set(() => ({
+      notes: updatedNotes,
     }));
 
     // Activity tracking
@@ -118,8 +124,8 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
       }
     });
 
-    set((state) => ({
-      notes: state.notes.filter((n) => n.id !== id),
+    set(() => ({
+      notes,
       tasks,
       expenses,
     }));

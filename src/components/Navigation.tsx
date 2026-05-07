@@ -5,7 +5,7 @@ import {
   NotebookPen,
   Settings,
 } from 'lucide-react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
@@ -18,7 +18,6 @@ const items = [
 ] as const;
 
 export function Navigation() {
-  const navigate = useNavigate();
   const location = useLocation();
 
   return (

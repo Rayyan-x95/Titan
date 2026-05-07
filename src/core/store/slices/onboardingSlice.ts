@@ -3,7 +3,7 @@ import { db } from '@/core/db/db';
 import type { OnboardingProfile, OnboardingUpdate } from '../types';
 import type { CoreStoreState } from '../useStore';
 import { buildBudgetSuggestions } from '@/lib/core/financeEngine';
-import { createDefaultOnboardingProfile } from '../utils';
+import { createDefaultOnboardingProfile, upsertItem } from '../utils';
 
 export interface OnboardingSlice {
   onboarding: OnboardingProfile;
@@ -60,7 +60,10 @@ export const createOnboardingSlice: StateCreator<CoreStoreState, [], [], Onboard
 
     set((state) => ({
       onboarding: next,
-      budgets: [...state.budgets, ...budgetSuggestions],
+      budgets: budgetSuggestions.reduce(
+        (acc, budget) => upsertItem(acc, budget),
+        state.budgets,
+      ),
     }));
     return next;
   },

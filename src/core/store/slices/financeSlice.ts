@@ -233,7 +233,10 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
           return update ? { ...e, lastProcessedAt: update.lastProcessedAt } : e;
         })
         .concat(newExpenses),
-      accounts: updatedAccounts,
+      accounts: updatedAccounts.reduce(
+        (acc, updated) => upsertItem(acc, updated),
+        state.accounts,
+      ),
     }));
   },
 });

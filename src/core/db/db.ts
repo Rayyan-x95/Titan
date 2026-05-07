@@ -34,6 +34,9 @@ class TitanDatabase extends Dexie {
       onboarding: 'id',
     });
 
+    // Version 2 was intentionally skipped. The schema jumped from v1 to v3
+    // when budgets, accounts, friends, groups, sharedExpenses, and dailySnapshots
+    // tables were added in a single migration.
     this.version(3).stores({
       tasks: 'id, status, createdAt, dueDate, noteId',
       notes: 'id, createdAt',

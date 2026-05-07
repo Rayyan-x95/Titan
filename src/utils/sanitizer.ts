@@ -17,27 +17,27 @@ export function sanitizeString(value: unknown, maxLength = MAX_STRING_LENGTH): s
 /**
  * Strips HTML tags safely using the browser's DOM parser
  */
+// Module-level singleton to avoid creating a new parser every call
+let _domParser: DOMParser | null = null;
+function getDomParser(): DOMParser | null {
+  if (!_domParser && typeof DOMParser !== 'undefined') {
+    _domParser = new DOMParser();
+  }
+  return _domParser;
+}
+
 export function stripHtml(value: string): string {
   if (!value) return '';
   try {
-    const doc = new Parser().parseFromString(value, 'text/html');
-    return doc.body.textContent || '';
+    const parser = getDomParser();
+    if (parser) {
+      const doc = parser.parseFromString(value, 'text/html');
+      return doc.body.textContent || '';
+    }
+    return value.replace(/<[^>]*>?/gm, '');
   } catch {
     // Fallback for environments where DOMParser is not available (e.g., SSR or tests)
     return value.replace(/<[^>]*>?/gm, '');
-  }
-}
-
-// Internal helper to avoid creating a new parser every time
-class Parser {
-  private parser: DOMParser | null = null;
-  parseFromString(string: string, type: DOMParserSupportedType): Document {
-    if (!this.parser && typeof DOMParser !== 'undefined') {
-      this.parser = new DOMParser();
-    }
-    if (this.parser) return this.parser.parseFromString(string, type);
-    // Return a mock document-like object if no parser
-    return { body: { textContent: string } } as Document;
   }
 }
 
@@ -54,7 +54,7 @@ export function sanitizeTitle(value: unknown): string {
  */
 export function sanitizeTag(value: unknown): string {
   const sanitized = sanitizeString(value, 30);
-  return sanitized.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  return sanitized.toLowerCase().replace(/[^\p{L}\p{N}_-]/gu, '');
 }
 
 /**

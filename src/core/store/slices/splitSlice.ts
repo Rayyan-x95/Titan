@@ -50,7 +50,14 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
   updateFriend: async (id, updates) => {
     const current = get().friends.find((f) => f.id === id);
     if (!current) return undefined;
-    const next: Friend = { ...current, ...updates };
+    const sanitizedUpdates = { ...updates };
+    if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
+      sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
+    }
+    if ('phoneNumber' in sanitizedUpdates && sanitizedUpdates.phoneNumber !== undefined) {
+      sanitizedUpdates.phoneNumber = sanitizeString(sanitizedUpdates.phoneNumber, 20);
+    }
+    const next: Friend = { ...current, ...sanitizedUpdates };
     await db.friends.put(next);
     set((state) => ({ friends: upsertItem(state.friends, next) }));
     return next;
@@ -134,7 +141,11 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
   updateGroup: async (id, updates) => {
     const current = get().groups.find((g) => g.id === id);
     if (!current) return undefined;
-    const next: Group = { ...current, ...updates };
+    const sanitizedUpdates = { ...updates };
+    if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
+      sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
+    }
+    const next: Group = { ...current, ...sanitizedUpdates };
     await db.groups.put(next);
     set((state) => ({ groups: upsertItem(state.groups, next) }));
     return next;
@@ -145,9 +156,11 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
       se.groupId === id ? { ...se, groupId: undefined } : se,
     );
 
+    const originalSharedById = new Map(get().sharedExpenses.map((se) => [se.id, se]));
+
     await db.transaction('rw', [db.groups, db.sharedExpenses], async () => {
       await db.groups.delete(id);
-      const affectedExpenses = sharedExpenses.filter((se, i) => se !== get().sharedExpenses[i]);
+      const affectedExpenses = sharedExpenses.filter((se) => se !== originalSharedById.get(se.id));
       if (affectedExpenses.length > 0) {
         await db.sharedExpenses.bulkPut(affectedExpenses);
       }
@@ -172,6 +185,11 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
       throw new Error(
         `Cannot add shared expense: Participants ${missingParticipants.map((mp) => mp.id).join(', ')} do not exist.`,
       );
+    }
+
+    // Validate totalAmount
+    if (!input.totalAmount || input.totalAmount <= 0) {
+      throw new Error('Cannot add shared expense: Total amount must be greater than 0.');
     }
 
     const expense: SharedExpense = {
