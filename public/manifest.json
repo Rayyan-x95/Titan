@@ -1,8 +1,14 @@
 {
+  "id": "/",
   "name": "Titan",
   "short_name": "Titan",
+  "dir": "ltr",
+  "lang": "en-US",
   "description": "Professional Personal Life Operating System for tasks, money, and thoughts.",
   "start_url": "/",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "scope": "/",

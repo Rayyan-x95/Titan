@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/app/Layout';
 import { useStore } from '@/core/store';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const DashboardPage = lazy(() =>
   import('@/features/dashboard').then((m) => ({ default: m.DashboardPage })),
@@ -113,50 +114,52 @@ function OnboardingGate() {
 
 export default function App() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
-          Loading...
-        </div>
-      }
-    >
-      <Routes>
-        {/* Marketing Routes */}
-        <Route path="home" element={<MarketingLanding />} />
-        <Route path="features" element={<FeaturesPage />} />
-        <Route path="ai-task-manager" element={<TaskManagerPage />} />
-        <Route path="expense-tracker" element={<ExpenseTrackerPage />} />
-        <Route path="shared-expenses" element={<SharedExpensesPage />} />
-        <Route path="life-timeline" element={<LifeTimelinePage />} />
-        <Route path="install-titan" element={<InstallPage />} />
-        <Route path="blog" element={<BlogPage />} />
-        <Route path="blog/:slug" element={<BlogPost />} />
-        <Route path="privacy" element={<PrivacyPage />} />
-        <Route path="terms" element={<TermsPage />} />
+    <ErrorBoundary>
+      <Suspense
+        fallback={
+          <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
+          {/* Marketing Routes */}
+          <Route path="home" element={<MarketingLanding />} />
+          <Route path="features" element={<FeaturesPage />} />
+          <Route path="ai-task-manager" element={<TaskManagerPage />} />
+          <Route path="expense-tracker" element={<ExpenseTrackerPage />} />
+          <Route path="shared-expenses" element={<SharedExpensesPage />} />
+          <Route path="life-timeline" element={<LifeTimelinePage />} />
+          <Route path="install-titan" element={<InstallPage />} />
+          <Route path="blog" element={<BlogPage />} />
+          <Route path="blog/:slug" element={<BlogPost />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="terms" element={<TermsPage />} />
 
-        {/* SEO Targeted Routes */}
-        <Route path="personal-life-os" element={<PersonalLifeOSPage />} />
-        <Route path="split-expenses-app" element={<SplitExpensesAppPage />} />
-        <Route path="what-is-titan" element={<WhatIsTitanPage />} />
-        <Route path="life-management-app" element={<LifeManagementAppPage />} />
+          {/* SEO Targeted Routes */}
+          <Route path="personal-life-os" element={<PersonalLifeOSPage />} />
+          <Route path="split-expenses-app" element={<SplitExpensesAppPage />} />
+          <Route path="what-is-titan" element={<WhatIsTitanPage />} />
+          <Route path="life-management-app" element={<LifeManagementAppPage />} />
 
-        {/* Legacy / App Routes */}
-        <Route path="welcome" element={<LandingPage />} />
-        <Route path="onboarding" element={<OnboardingPage />} />
+          {/* Legacy / App Routes */}
+          <Route path="welcome" element={<LandingPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
 
-        <Route path="/" element={<OnboardingGate />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="timeline" element={<TimelinePage />} />
-          <Route path="split" element={<SplitPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="notes" element={<NotesPage />} />
-          <Route path="finance" element={<FinancePage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="share" element={<ShareTargetPage />} />
-        </Route>
+          <Route path="/" element={<OnboardingGate />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="timeline" element={<TimelinePage />} />
+            <Route path="split" element={<SplitPage />} />
+            <Route path="tasks" element={<TasksPage />} />
+            <Route path="notes" element={<NotesPage />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="share" element={<ShareTargetPage />} />
+          </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }

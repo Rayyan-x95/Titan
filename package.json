@@ -35,8 +35,6 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.1.0",
     "dexie": "^4.4.2",
     "framer-motion": "^12.38.0",

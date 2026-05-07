@@ -164,21 +164,25 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
     if (!current) return;
 
     const account = get().accounts.find((a) => a.id === current.accountId);
-    if (!account) return;
+    let updatedAccount: typeof account | undefined;
 
-    const updatedAccount = {
-      ...account,
-      balance: revertExpenseFromBalance(account.balance, current.amount, current.type),
-    };
+    if (account) {
+      updatedAccount = {
+        ...account,
+        balance: revertExpenseFromBalance(account.balance, current.amount, current.type),
+      };
+    }
 
     await db.transaction('rw', [db.expenses, db.accounts], async () => {
       await db.expenses.delete(id);
-      await db.accounts.put(updatedAccount);
+      if (updatedAccount) {
+        await db.accounts.put(updatedAccount);
+      }
     });
 
     set((state) => ({
       expenses: state.expenses.filter((e) => e.id !== id),
-      accounts: upsertItem(state.accounts, updatedAccount),
+      accounts: updatedAccount ? upsertItem(state.accounts, updatedAccount) : state.accounts,
     }));
 
     // Update snapshot
@@ -233,10 +237,7 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
           return update ? { ...e, lastProcessedAt: update.lastProcessedAt } : e;
         })
         .concat(newExpenses),
-      accounts: updatedAccounts.reduce(
-        (acc, updated) => upsertItem(acc, updated),
-        state.accounts,
-      ),
+      accounts: updatedAccounts.reduce((acc, updated) => upsertItem(acc, updated), state.accounts),
     }));
   },
 });

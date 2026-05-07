@@ -26,6 +26,10 @@ export interface SplitSlice {
   updateGroup: (id: string, updates: GroupUpdate) => Promise<Group | undefined>;
   deleteGroup: (id: string) => Promise<void>;
   addSharedExpense: (input: SharedExpenseInput) => Promise<SharedExpense>;
+  updateSharedExpense: (
+    id: string,
+    updates: Partial<SharedExpenseInput>,
+  ) => Promise<SharedExpense | undefined>;
   deleteSharedExpense: (id: string) => Promise<void>;
 }
 
@@ -142,6 +146,17 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     const current = get().groups.find((g) => g.id === id);
     if (!current) return undefined;
     const sanitizedUpdates = { ...updates };
+
+    if ('memberIds' in sanitizedUpdates && Array.isArray(sanitizedUpdates.memberIds)) {
+      const friendIds = new Set(get().friends.map((f) => f.id));
+      const missingFriends = sanitizedUpdates.memberIds.filter((mid) => !friendIds.has(mid));
+      if (missingFriends.length > 0) {
+        throw new Error(
+          `Cannot update group: Friends with IDs ${missingFriends.join(', ')} do not exist.`,
+        );
+      }
+    }
+
     if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
       sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
     }
@@ -208,6 +223,41 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     await get().updateSnapshot(today, 'split', 1);
 
     return expense;
+  },
+
+  updateSharedExpense: async (id, updates) => {
+    const current = get().sharedExpenses.find((se) => se.id === id);
+    if (!current) return undefined;
+
+    const next: SharedExpense = { ...current, ...updates };
+
+    // Validate group exists if provided
+    if (next.groupId && !get().groups.some((g) => g.id === next.groupId)) {
+      throw new Error(`Cannot update shared expense: Group ${next.groupId} does not exist.`);
+    }
+
+    // Validate participants exist
+    const friendIds = new Set(['user', ...get().friends.map((f) => f.id)]);
+    const missingParticipants = (next.participants || []).filter((p) => !friendIds.has(p.id));
+    if (missingParticipants.length > 0) {
+      throw new Error(
+        `Cannot update shared expense: Participants ${missingParticipants.map((mp) => mp.id).join(', ')} do not exist.`,
+      );
+    }
+
+    // Validate totalAmount
+    if (!next.totalAmount || next.totalAmount <= 0) {
+      throw new Error('Cannot update shared expense: Total amount must be greater than 0.');
+    }
+
+    if ('description' in updates && typeof updates.description === 'string') {
+      next.description = sanitizeString(updates.description, 200);
+    }
+
+    await db.sharedExpenses.put(next);
+    set((state) => ({ sharedExpenses: upsertItem(state.sharedExpenses, next) }));
+
+    return next;
   },
 
   deleteSharedExpense: async (id) => {

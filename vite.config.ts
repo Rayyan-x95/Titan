@@ -27,6 +27,8 @@ export default defineConfig({
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           state: ['zustand', 'dexie'],
+          ui: ['framer-motion', 'lucide-react', 'react-markdown'],
+          charts: ['recharts'],
         },
       },
     },
