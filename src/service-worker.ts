@@ -127,8 +127,8 @@ self.addEventListener('push', (event) => {
 
   const options: NotificationOptions = {
     body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/falcon.png',
     data: url,
   };
 
