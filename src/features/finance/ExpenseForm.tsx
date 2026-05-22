@@ -197,9 +197,9 @@ export function ExpenseForm({
         onSubmit={(event) => {
           void handleSubmit(event);
         }}
-        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
+        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
       >
-        <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
+        <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-5 py-4 sm:px-8 sm:py-6">
           <div className="flex items-center gap-6">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
@@ -255,7 +255,7 @@ export function ExpenseForm({
           </div>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-8 py-6">
+        <div className="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto px-5 py-4 sm:px-8 sm:py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <label className="block space-y-2">
@@ -405,13 +405,13 @@ export function ExpenseForm({
         {submissionError && (
           <div
             role="alert"
-            className="mx-8 mb-4 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-500"
+            className="mx-5 sm:mx-8 mb-4 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-500"
           >
             {submissionError}
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 border-t border-border/50 bg-secondary/10 px-8 py-6">
+        <div className="flex items-center justify-end gap-3 border-t border-border/50 bg-secondary/10 px-5 py-4 sm:px-8 sm:py-6">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

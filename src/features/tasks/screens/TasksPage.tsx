@@ -116,7 +116,9 @@ export function TasksPage() {
         <div className="w-full lg:w-auto shrink-0 space-y-4">
           <div className="flex lg:hidden items-center justify-between px-1">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-              {selectedDate ? selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'Calendar'}
+              {selectedDate
+                ? selectedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+                : 'Calendar'}
             </p>
             <button
               onClick={() => setShowMobileCalendar(!showMobileCalendar)}
@@ -125,11 +127,15 @@ export function TasksPage() {
               {showMobileCalendar ? 'Hide' : 'Show'}
             </button>
           </div>
-          
-          <div className={cn(
-            "transition-all duration-500 ease-in-out overflow-hidden",
-            showMobileCalendar ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 lg:max-h-none lg:opacity-100"
-          )}>
+
+          <div
+            className={cn(
+              'transition-all duration-500 ease-in-out overflow-hidden',
+              showMobileCalendar
+                ? 'max-h-[500px] opacity-100'
+                : 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100',
+            )}
+          >
             <Calendar
               value={selectedDate ?? undefined}
               markedDates={markedDates}
@@ -271,7 +277,9 @@ export function TasksPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <p className="text-xl font-black text-white tracking-tighter">A Clean Horizon</p>
+                          <p className="text-xl font-black text-white tracking-tighter">
+                            A Clean Horizon
+                          </p>
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
                             Adjust filters or start a new quest.
                           </p>

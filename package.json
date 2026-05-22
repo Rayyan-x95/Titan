@@ -1,7 +1,7 @@
 {
   "name": "titan",
   "private": true,
-  "version": "0.1.0-beta",
+  "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -23,6 +23,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "check:ci": "npm run typecheck && npm run lint && npm test",
     "bench": "node scripts/bench.js",
     "smoke": "node scripts/smoke.js"
@@ -58,8 +59,8 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "@vitejs/plugin-react": "^5.0.2",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.50.0",
@@ -70,7 +71,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "globals": "^17.5.0",
     "husky": "^8.0.0",
-    "lint-staged": "^14.0.0",
+    "lint-staged": "^17.0.4",
     "postcss": "^8.5.6",
     "prettier": "^3.0.0",
     "tailwindcss": "^3.4.17",

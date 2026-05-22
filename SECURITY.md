@@ -28,14 +28,14 @@ Titan is a **100% local-first** application — your data never leaves your devi
 
 All store actions enforce validation at the boundary:
 
-| Input Type | Sanitization |
-|-----------|-------------|
-| Strings | Trimmed, length-capped (`sanitizeString`) |
-| HTML content | DOM-parsed, tags stripped (`stripHtml`) |
-| Tags | Lowercased, Unicode-aware alphanumeric only (`sanitizeTag`) |
-| Dates | ISO format validated, invalid dates rejected (`sanitizeDateString`) |
-| Money | Integer cents enforced, `normalizeCents()` applied |
-| References | Foreign key existence validated before write |
+| Input Type   | Sanitization                                                        |
+| ------------ | ------------------------------------------------------------------- |
+| Strings      | Trimmed, length-capped (`sanitizeString`)                           |
+| HTML content | DOM-parsed, tags stripped (`stripHtml`)                             |
+| Tags         | Lowercased, Unicode-aware alphanumeric only (`sanitizeTag`)         |
+| Dates        | ISO format validated, invalid dates rejected (`sanitizeDateString`) |
+| Money        | Integer cents enforced, `normalizeCents()` applied                  |
+| References   | Foreign key existence validated before write                        |
 
 ## Reporting a Vulnerability
 

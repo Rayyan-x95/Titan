@@ -3,6 +3,10 @@ import { useSeo } from '@/hooks/useSeo';
 import { ArrowRight, Clock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+export type BlogContentBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'heading'; text: string };
+
 export const BLOG_POSTS = [
   {
     slug: 'the-future-of-personal-operating-systems',
@@ -11,14 +15,26 @@ export const BLOG_POSTS = [
     author: 'Titan Team',
     excerpt:
       'How unified digital workspaces are changing the way we manage our daily lives, productivity, and finances.',
-    content: `
-      <p>In a world of fragmented apps, the concept of a Personal Operating System (Life OS) is becoming increasingly vital. We are no longer satisfied with disconnected tools; we need ecosystems that understand the context of our actions.</p>
-      <h2>The Problem of Fragmentation</h2>
-      <p>Most people use at least 5 different apps to manage their day: a calendar, a to-do list, a budget tracker, a note-taking app, and a communication tool. The constant switching between these interfaces leads to cognitive load and data silos.</p>
-      <h2>The Unified Solution</h2>
-      <p>Titan is built on the belief that your data should work for you. When your tasks are aware of your budget, and your notes are linked to your timeline, you gain insights that are impossible to see in isolated systems.</p>
-      <p>The future of productivity isn't more features; it's more integration. It's about reducing the friction between thought and action.</p>
-    `,
+    content: [
+      {
+        type: 'paragraph',
+        text: 'In a world of fragmented apps, the concept of a Personal Operating System (Life OS) is becoming increasingly vital. We are no longer satisfied with disconnected tools; we need ecosystems that understand the context of our actions.',
+      },
+      { type: 'heading', text: 'The Problem of Fragmentation' },
+      {
+        type: 'paragraph',
+        text: 'Most people use at least 5 different apps to manage their day: a calendar, a to-do list, a budget tracker, a note-taking app, and a communication tool. The constant switching between these interfaces leads to cognitive load and data silos.',
+      },
+      { type: 'heading', text: 'The Unified Solution' },
+      {
+        type: 'paragraph',
+        text: 'Titan is built on the belief that your data should work for you. When your tasks are aware of your budget, and your notes are linked to your timeline, you gain insights that are impossible to see in isolated systems.',
+      },
+      {
+        type: 'paragraph',
+        text: "The future of productivity isn't more features; it's more integration. It's about reducing the friction between thought and action.",
+      },
+    ] satisfies BlogContentBlock[],
   },
   {
     slug: 'why-offline-first-matters-for-productivity',
@@ -27,13 +43,22 @@ export const BLOG_POSTS = [
     author: 'Titan Team',
     excerpt:
       'Discover why local-first architecture is the key to deep focus and reliable digital workflows.',
-    content: `
-      <p>The cloud is great until it isn't. When you're in the "zone" and your connection drops, the friction can break your concentration. Offline-first apps like Titan solve this by prioritizing local action.</p>
-      <h2>Reliability is Table Stakes</h2>
-      <p>A life operating system must be as reliable as a physical notebook. You should never have to wait for a spinning wheel when you're trying to capture a fleeting idea or log a quick expense.</p>
-      <h2>Privacy as a Default</h2>
-      <p>By keeping data local, offline-first apps naturally protect user privacy. In Titan, your financial history and personal thoughts stay on your device, giving you peace of mind in an era of data breaches.</p>
-    `,
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The cloud is great until it is not. When you are in the zone and your connection drops, the friction can break your concentration. Offline-first apps like Titan solve this by prioritizing local action.',
+      },
+      { type: 'heading', text: 'Reliability is Table Stakes' },
+      {
+        type: 'paragraph',
+        text: 'A life operating system must be as reliable as a physical notebook. You should never have to wait for a spinning wheel when you are trying to capture a fleeting idea or log a quick expense.',
+      },
+      { type: 'heading', text: 'Privacy as a Default' },
+      {
+        type: 'paragraph',
+        text: 'By keeping data local, offline-first apps naturally protect user privacy. In Titan, your financial history and personal thoughts stay on your device, giving you peace of mind in an era of data breaches.',
+      },
+    ] satisfies BlogContentBlock[],
   },
 ];
 

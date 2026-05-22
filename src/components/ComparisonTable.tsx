@@ -29,9 +29,7 @@ export function ComparisonTable() {
         <tbody className="divide-y divide-border/40">
           {features.map((feature) => (
             <tr key={feature.name} className="group transition-colors hover:bg-primary/5">
-              <td className="px-6 py-5 text-sm font-medium text-foreground">
-                {feature.name}
-              </td>
+              <td className="px-6 py-5 text-sm font-medium text-foreground">{feature.name}</td>
               <td className="px-6 py-5 text-center">
                 <div className="flex justify-center">
                   <Check className="h-5 w-5 text-primary" />

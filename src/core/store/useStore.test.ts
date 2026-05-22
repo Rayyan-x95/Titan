@@ -1,9 +1,20 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Account, Budget, Expense, Note, OnboardingProfile, Task } from './types';
+import type {
+  Account,
+  Budget,
+  DailySnapshot,
+  Expense,
+  Friend,
+  Group,
+  Note,
+  OnboardingProfile,
+  SharedExpense,
+  Task,
+} from './types';
 
-function createTable<T extends { id: string }>() {
+function createTable<T>(getKey: (value: T) => string = (value) => (value as { id: string }).id) {
   const rows = new Map<string, T>();
 
   return {
@@ -11,8 +22,9 @@ function createTable<T extends { id: string }>() {
       return Promise.resolve(Array.from(rows.values()));
     },
     put(value: T) {
-      rows.set(value.id, value);
-      return Promise.resolve(value.id);
+      const key = getKey(value);
+      rows.set(key, value);
+      return Promise.resolve(key);
     },
     get(id: string) {
       return Promise.resolve(rows.get(id));
@@ -33,7 +45,7 @@ function createTable<T extends { id: string }>() {
     },
     bulkPut(values: T[]) {
       for (const value of values) {
-        rows.set(value.id, value);
+        rows.set(getKey(value), value);
       }
       return Promise.resolve();
     },
@@ -53,6 +65,10 @@ const tables = vi.hoisted(() => ({
   budgetsTable: createTable<Budget>(),
   accountsTable: createTable<Account>(),
   onboardingTable: createTable<OnboardingProfile>(),
+  friendsTable: createTable<Friend>(),
+  groupsTable: createTable<Group>(),
+  sharedExpensesTable: createTable<SharedExpense>(),
+  dailySnapshotsTable: createTable<DailySnapshot>((snapshot) => snapshot.date),
 }));
 
 vi.mock('@/core/db/db', () => ({
@@ -63,30 +79,10 @@ vi.mock('@/core/db/db', () => ({
     budgets: tables.budgetsTable,
     accounts: tables.accountsTable,
     onboarding: tables.onboardingTable,
-    friends: {
-      clear: () => Promise.resolve(),
-      toArray: () => Promise.resolve([]),
-      put: () => Promise.resolve(),
-      bulkPut: () => Promise.resolve(),
-    },
-    groups: {
-      clear: () => Promise.resolve(),
-      toArray: () => Promise.resolve([]),
-      put: () => Promise.resolve(),
-      bulkPut: () => Promise.resolve(),
-    },
-    sharedExpenses: {
-      clear: () => Promise.resolve(),
-      toArray: () => Promise.resolve([]),
-      put: () => Promise.resolve(),
-      bulkPut: () => Promise.resolve(),
-    },
-    dailySnapshots: {
-      clear: () => Promise.resolve(),
-      toArray: () => Promise.resolve([]),
-      put: () => Promise.resolve(),
-      bulkPut: () => Promise.resolve(),
-    },
+    friends: tables.friendsTable,
+    groups: tables.groupsTable,
+    sharedExpenses: tables.sharedExpensesTable,
+    dailySnapshots: tables.dailySnapshotsTable,
     tables: [
       tables.tasksTable,
       tables.notesTable,
@@ -94,6 +90,10 @@ vi.mock('@/core/db/db', () => ({
       tables.budgetsTable,
       tables.accountsTable,
       tables.onboardingTable,
+      tables.friendsTable,
+      tables.groupsTable,
+      tables.sharedExpensesTable,
+      tables.dailySnapshotsTable,
     ],
     transaction: async (_mode: string, ...args: unknown[]) => {
       const callback = args[args.length - 1] as () => Promise<void>;
@@ -111,6 +111,10 @@ beforeEach(async () => {
   await tables.budgetsTable.clear();
   await tables.accountsTable.clear();
   await tables.onboardingTable.clear();
+  await tables.friendsTable.clear();
+  await tables.groupsTable.clear();
+  await tables.sharedExpensesTable.clear();
+  await tables.dailySnapshotsTable.clear();
 
   const createdAt = new Date().toISOString();
   const cashAccount: Account = { id: 'cash', name: 'Cash', balance: 0, createdAt };
@@ -122,6 +126,10 @@ beforeEach(async () => {
     expenses: [],
     budgets: [],
     accounts: [cashAccount, bankAccount],
+    friends: [],
+    groups: [],
+    sharedExpenses: [],
+    dailySnapshots: [],
     hydrated: true,
   });
   await tables.accountsTable.put(cashAccount);
@@ -199,5 +207,64 @@ describe('core store stabilization behavior', () => {
     });
 
     expect(useStore.getState().expenses[0]?.linkedTaskId).toBeUndefined();
+  });
+
+  it('normalizes updated expense amounts to integer cents', async () => {
+    const expense = await useStore.getState().addExpense({
+      amountDollars: 10,
+      category: 'Ops',
+    });
+
+    const updated = await useStore.getState().updateExpense(expense.id, { amount: 1234.56 });
+
+    expect(updated?.amount).toBe(1234);
+    expect(useStore.getState().expenses.find((item) => item.id === expense.id)?.amount).toBe(1234);
+  });
+
+  it('clears stale timeline snapshots from state and storage on import', async () => {
+    await useStore.getState().updateSnapshot('2026-05-01', 'expense', 1200);
+    expect(useStore.getState().dailySnapshots).toHaveLength(1);
+    expect(await tables.dailySnapshotsTable.toArray()).toHaveLength(1);
+
+    await useStore.getState().importBackup({
+      tasks: [],
+      notes: [],
+      expenses: [],
+    });
+
+    expect(useStore.getState().dailySnapshots).toEqual([]);
+    expect(await tables.dailySnapshotsTable.toArray()).toEqual([]);
+  });
+
+  it('rejects note creation with missing linked notes', async () => {
+    await expect(
+      useStore.getState().addNote({
+        content: 'Invalid link',
+        tags: [],
+        linkedNoteIds: ['missing-note'],
+      }),
+    ).rejects.toThrow(/does not exist/);
+  });
+
+  it('rejects shared expenses with invalid payer or unbalanced shares', async () => {
+    const friend = await useStore.getState().addFriend({ name: 'Ava' });
+
+    await expect(
+      useStore.getState().addSharedExpense({
+        totalAmount: 1000,
+        description: 'Dinner',
+        paidBy: 'missing-friend',
+        participants: [{ id: friend.id, amount: 1000 }],
+      }),
+    ).rejects.toThrow(/Paid by/);
+
+    await expect(
+      useStore.getState().addSharedExpense({
+        totalAmount: 1000,
+        description: 'Dinner',
+        paidBy: 'user',
+        participants: [{ id: friend.id, amount: 900 }],
+      }),
+    ).rejects.toThrow(/sum to total amount/);
   });
 });

@@ -22,10 +22,14 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
 
   addNote: async (input) => {
     const note = normalizeNote(input);
+    const errors = validateNoteReferences(note, get().notes);
+    if (errors.length > 0) throw new Error(errors.join('; '));
+
     const updatedNotes = syncNoteNoteReferences(note, get().notes);
+    const persistedNote = updatedNotes.find((n) => n.id === note.id) ?? note;
 
     await db.transaction('rw', [db.notes], async () => {
-      await db.notes.put(note);
+      await db.notes.put(persistedNote);
       // Persist backlink changes to other notes
       const touchedNotes = updatedNotes.filter(
         (n) =>

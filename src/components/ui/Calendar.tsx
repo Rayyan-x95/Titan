@@ -126,8 +126,13 @@ export function Calendar({ value, onChange, markedDates = [], className }: Calen
                 className={cn(
                   'h-8 w-8 rounded-full text-sm transition-all duration-150',
                   !cell.current && 'pointer-events-none text-muted-foreground/25',
-                  cell.current && !isSelected && !isToday && 'text-foreground hover:bg-secondary active:scale-95',
-                  isToday && !isSelected && 'font-bold text-primary ring-1 ring-primary/50 active:scale-95',
+                  cell.current &&
+                    !isSelected &&
+                    !isToday &&
+                    'text-foreground hover:bg-secondary active:scale-95',
+                  isToday &&
+                    !isSelected &&
+                    'font-bold text-primary ring-1 ring-primary/50 active:scale-95',
                   isSelected &&
                     'bg-primary font-bold text-primary-foreground shadow-glow scale-110 active:scale-95',
                 )}

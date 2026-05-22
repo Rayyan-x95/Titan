@@ -128,7 +128,7 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
 
     // Normalize and validate amount if updating
     if ('amount' in updateData) {
-      const newAmount = updateData.amount ?? current.amount;
+      const newAmount = normalizePositiveCents(updateData.amount ?? current.amount);
       if (newAmount <= 0) throw new Error('Amount must be greater than 0');
       updateData.amount = newAmount;
     }

@@ -32,7 +32,7 @@ interface SettingsRowProps {
 }
 function SettingsRow({ icon, title, description, action }: SettingsRowProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-6 border-b border-white/5 last:border-0">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-6 border-b border-white/5 last:border-0">
       <div className="flex items-start gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/10 shadow-glow">
           {icon}
@@ -42,7 +42,7 @@ function SettingsRow({ icon, title, description, action }: SettingsRowProps) {
           <p className="text-xs text-slate-500 leading-relaxed font-bold">{description}</p>
         </div>
       </div>
-      <div className="shrink-0 pl-[3.75rem] sm:pl-0">{action}</div>
+      <div className="w-full sm:w-auto pl-[3.75rem] sm:pl-0 flex sm:justify-end">{action}</div>
     </div>
   );
 }
@@ -224,7 +224,7 @@ export function SettingsPage() {
                   { label: 'INR (₹)', value: 'INR' },
                   { label: 'JPY (¥)', value: 'JPY' },
                 ]}
-                className="w-48"
+                className="w-full sm:w-48"
               />
             }
           />
@@ -241,7 +241,7 @@ export function SettingsPage() {
                   const val = e.target.value.toLowerCase().replace(/\s/g, '');
                   void useStore.getState().updateOnboarding({ upiId: val });
                 }}
-                className="w-48 rounded-xl border border-white/5 bg-white/5 px-4 py-2.5 text-sm font-bold text-white placeholder:text-slate-600 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                className="w-full sm:w-48 rounded-xl border border-white/5 bg-white/5 px-4 py-2.5 text-sm font-bold text-white placeholder:text-slate-600 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
               />
             }
           />

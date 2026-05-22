@@ -168,7 +168,11 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
           dbStatus: 'online',
         },
       });
-      get().addLog('info', 'System', `Hydration complete in ${Math.round(performance.now() - startTime)}ms`);
+      get().addLog(
+        'info',
+        'System',
+        `Hydration complete in ${Math.round(performance.now() - startTime)}ms`,
+      );
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Unknown hydration error');
       console.error('[Titan] Hydration failed:', err);
@@ -287,6 +291,7 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
       .map((b) => normalizeBudget(b))
       .filter(Boolean);
     const importedOnboarding = normalizeImportedOnboarding(payload.onboarding, get().onboarding);
+    const dailySnapshots = computeDailySnapshots(tasks, notes, expenses, sharedExpenses);
 
     await db.transaction('rw', db.tables, async () => {
       await Promise.all(db.tables.map((table) => table.clear()));
@@ -300,6 +305,7 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
         db.budgets.bulkPut(importedBudgets),
         db.accounts.bulkPut(importedAccounts),
         db.onboarding.put(importedOnboarding),
+        db.dailySnapshots.bulkPut(dailySnapshots),
       ]);
     });
 
@@ -313,6 +319,7 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
       budgets: importedBudgets,
       accounts: importedAccounts,
       onboarding: importedOnboarding,
+      dailySnapshots,
       hydrated: true,
     });
   },
@@ -357,5 +364,4 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     await db.dailySnapshots.bulkPut(snapshots);
     set({ dailySnapshots: snapshots });
   },
-
 });

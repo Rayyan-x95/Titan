@@ -4,9 +4,13 @@ import { useStore } from '@/core/store';
  * Titan Local Observability
  * Replaces external telemetry with localized event logging.
  */
-export function trackEvent(category: string, message: string, level: 'info' | 'warn' | 'error' = 'info') {
+export function trackEvent(
+  category: string,
+  message: string,
+  level: 'info' | 'warn' | 'error' = 'info',
+) {
   if (typeof window === 'undefined') return;
-  
+
   // 1. Log to console for developer visibility
   const prefix = `[Titan:${category}]`;
   const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';

@@ -33,28 +33,31 @@ export function NotFoundPage() {
         <h1 className="text-7xl font-black tracking-tighter text-white sm:text-9xl">
           4<span className="text-blue-500">0</span>4
         </h1>
-        
+
         <div className="mt-4 space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Orbit Lost
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Orbit Lost</h2>
           <p className="max-w-md text-sm font-medium text-slate-500 leading-relaxed sm:text-base">
-            The coordinates you provided lead to a void. The page has either been moved, deleted, or never existed in this timeline.
+            The coordinates you provided lead to a void. The page has either been moved, deleted, or
+            never existed in this timeline.
           </p>
         </div>
 
         <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button
             variant="ghost"
-            onClick={() => { void navigate(-1); }}
+            onClick={() => {
+              void navigate(-1);
+            }}
             className="group h-14 rounded-2xl border border-white/5 bg-white/5 px-8 transition-all hover:bg-white/10"
           >
             <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Go Back
           </Button>
-          
+
           <Button
-            onClick={() => { void navigate('/'); }}
+            onClick={() => {
+              void navigate('/');
+            }}
             className="h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 px-10 font-bold text-white shadow-glow-blue transition-all hover:scale-105 active:scale-95"
           >
             <Home className="mr-2 h-4 w-4" />

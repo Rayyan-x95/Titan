@@ -13,6 +13,8 @@ const ROUTES = [
   '/install-titan',
   '/blog',
   '/welcome',
+  '/privacy',
+  '/terms',
   '/personal-life-os',
   '/split-expenses-app',
   '/what-is-titan',

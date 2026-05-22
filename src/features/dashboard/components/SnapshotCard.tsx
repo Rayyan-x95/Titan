@@ -35,12 +35,12 @@ export function SnapshotCard() {
       }}
     >
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex flex-col-reverse xs:flex-row xs:items-center justify-between gap-4 mb-8 sm:mb-10">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-400/80">
               Personal Narrative
             </p>
-            <h2 className="mt-3 text-4xl font-black tracking-tight text-white">
+            <h2 className="mt-2 xs:mt-3 text-3xl sm:text-4xl font-black tracking-tight text-white">
               {getGreeting()}, <span className="text-gradient">{onboardingName || 'there'}</span>
             </h2>
           </div>

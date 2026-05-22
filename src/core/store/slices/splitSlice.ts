@@ -14,6 +14,7 @@ import type { CoreStoreState } from '../useStore';
 import { sanitizeString } from '@/utils/sanitizer';
 import { upsertItem, createId, createTimestamp } from '../utils';
 import { toLocalDateString } from '@/utils/date';
+import { validateSplitShares } from '@/lib/core/splitEngine';
 
 export interface SplitSlice {
   friends: Friend[];
@@ -195,6 +196,10 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
 
     // Validate participants exist
     const friendIds = new Set(['user', ...get().friends.map((f) => f.id)]);
+    if (!friendIds.has(input.paidBy || 'user')) {
+      throw new Error(`Cannot add shared expense: Paid by ${input.paidBy} does not exist.`);
+    }
+
     const missingParticipants = (input.participants || []).filter((p) => !friendIds.has(p.id));
     if (missingParticipants.length > 0) {
       throw new Error(
@@ -205,6 +210,9 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     // Validate totalAmount
     if (!input.totalAmount || input.totalAmount <= 0) {
       throw new Error('Cannot add shared expense: Total amount must be greater than 0.');
+    }
+    if (!validateSplitShares(input.totalAmount, input.participants || [])) {
+      throw new Error('Cannot add shared expense: Participant shares must sum to total amount.');
     }
 
     const expense: SharedExpense = {
@@ -238,6 +246,10 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
 
     // Validate participants exist
     const friendIds = new Set(['user', ...get().friends.map((f) => f.id)]);
+    if (!friendIds.has(next.paidBy || 'user')) {
+      throw new Error(`Cannot update shared expense: Paid by ${next.paidBy} does not exist.`);
+    }
+
     const missingParticipants = (next.participants || []).filter((p) => !friendIds.has(p.id));
     if (missingParticipants.length > 0) {
       throw new Error(
@@ -248,6 +260,9 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     // Validate totalAmount
     if (!next.totalAmount || next.totalAmount <= 0) {
       throw new Error('Cannot update shared expense: Total amount must be greater than 0.');
+    }
+    if (!validateSplitShares(next.totalAmount, next.participants || [])) {
+      throw new Error('Cannot update shared expense: Participant shares must sum to total amount.');
     }
 
     if ('description' in updates && typeof updates.description === 'string') {

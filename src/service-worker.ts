@@ -103,9 +103,14 @@ registerRoute(navigationRoute);
 // ─── Offline Fallback ─────────────────────────────────────────────────────────
 
 setCatchHandler(async ({ request }) => {
-  // Navigation fallback to offline.html
+  // Navigation fallback to index.html (SPA app shell) so client-side routing works offline!
   if (request.mode === 'navigate') {
-    return (await matchPrecache('/offline.html')) || Response.error();
+    return (
+      (await matchPrecache('/index.html')) ||
+      (await matchPrecache('index.html')) ||
+      (await matchPrecache('/offline.html')) ||
+      Response.error()
+    );
   }
 
   // Fallback for other resource types if needed

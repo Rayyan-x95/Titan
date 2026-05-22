@@ -16,7 +16,10 @@ interface GroupDetailViewProps {
 }
 
 export function GroupDetailView({ group, open, onOpenChange }: GroupDetailViewProps) {
-  const { friends, sharedExpenses, deleteGroup, deleteSharedExpense } = useStore();
+  const friends = useStore((s) => s.friends);
+  const sharedExpenses = useStore((s) => s.sharedExpenses);
+  const deleteGroup = useStore((s) => s.deleteGroup);
+  const deleteSharedExpense = useStore((s) => s.deleteSharedExpense);
   const { currency } = useSettings();
 
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);

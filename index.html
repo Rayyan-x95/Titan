@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://titanapp.qzz.io; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; object-src 'none';" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://titanapp.qzz.io; connect-src 'self'; worker-src 'self' blob:; object-src 'none';"
+    />
     <meta name="google-site-verification" content="uWhCQ7ngQkCcxxa2BxYeaVSTO04p5gilA_v3CqomofE" />
     <meta name="robots" content="index, follow" />
 
@@ -57,20 +60,19 @@
     <meta name="twitter:image" content="https://titanapp.qzz.io/Opengraph.png" />
 
     <link rel="canonical" href="https://titanapp.qzz.io/" />
+    <!-- Google Site Name Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Titan",
+        "alternateName": ["Titan Life OS", "Titan PWA"],
+        "url": "https://titanapp.qzz.io/"
+      }
+    </script>
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" href="/icons/falcon.png" />
     <link rel="apple-touch-icon" href="/icons/falcon.png" />
-
-    <!-- Resource Hints -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-
-    <!-- Google Fonts: Inter & Inter Tight -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
 
     <script>
       (() => {

@@ -1,104 +1,120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Titan — Offline</title>
     <style>
-        :root {
-            --bg: #020617;
-            --primary: #0A3DFF;
-            --text: #ffffff;
-            --muted: #64748b;
-        }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-            overflow: hidden;
-        }
-        .container {
-            padding: 2rem;
-            max-width: 400px;
-            position: relative;
-            z-index: 10;
-        }
-        .icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            box-shadow: 0 0 30px rgba(10, 61, 255, 0.1);
-        }
-        .icon svg {
-            width: 40px;
-            height: 40px;
-            color: var(--primary);
-        }
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            margin: 0 0 1rem;
-        }
-        p {
-            color: var(--muted);
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin: 0 0 2.5rem;
-        }
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            box-shadow: 0 4px 20px rgba(10, 61, 255, 0.3);
-        }
-        button:active {
-            transform: scale(0.95);
-            opacity: 0.9;
-        }
-        .bg-glow {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(10, 61, 255, 0.1) 0%, transparent 70%);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1;
-            pointer-events: none;
-        }
+      :root {
+        --bg: #020617;
+        --primary: #0a3dff;
+        --text: #ffffff;
+        --muted: #64748b;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        text-align: center;
+        overflow: hidden;
+      }
+      .container {
+        padding: 2rem;
+        max-width: 400px;
+        position: relative;
+        z-index: 10;
+      }
+      .icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        box-shadow: 0 0 30px rgba(10, 61, 255, 0.1);
+      }
+      .icon svg {
+        width: 40px;
+        height: 40px;
+        color: var(--primary);
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin: 0 0 1rem;
+      }
+      p {
+        color: var(--muted);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin: 0 0 2.5rem;
+      }
+      button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          opacity 0.2s;
+        box-shadow: 0 4px 20px rgba(10, 61, 255, 0.3);
+      }
+      button:active {
+        transform: scale(0.95);
+        opacity: 0.9;
+      }
+      .bg-glow {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(10, 61, 255, 0.1) 0%, transparent 70%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        pointer-events: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="bg-glow"></div>
     <div class="container">
-        <div class="icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-            </svg>
-        </div>
-        <h1>Connection Lost</h1>
-        <p>Titan is primarily offline-first, but we need a connection to fetch the initial dashboard. Check your network and try again.</p>
-        <button onclick="window.location.reload()">Try Again</button>
+      <div class="icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+          />
+        </svg>
+      </div>
+      <h1>Offline Mode Active</h1>
+      <p>
+        Titan is a 100% offline-first application. All your tasks, notes, finances, and settings are
+        fully operational and saved securely in local storage.
+      </p>
+      <button onclick="window.location.href = '/'">Go to Dashboard</button>
     </div>
-</body>
+  </body>
 </html>

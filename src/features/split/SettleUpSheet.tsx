@@ -21,7 +21,10 @@ export function SettleUpSheet({
   balances,
   members,
 }: SettleUpSheetProps) {
-  const { addSharedExpense, friends, onboarding, groups } = useStore();
+  const addSharedExpense = useStore((s) => s.addSharedExpense);
+  const friends = useStore((s) => s.friends);
+  const onboarding = useStore((s) => s.onboarding);
+  const groups = useStore((s) => s.groups);
   const { currency } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [qrSettlement, setQrSettlement] = useState<{

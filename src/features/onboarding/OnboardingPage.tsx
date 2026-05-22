@@ -23,13 +23,13 @@ import { OnboardingStepper } from './components/OnboardingStepper';
 import {
   centsToMoney,
   clampStep,
+  canSkipOnboarding,
   getOnboardingValidationError,
   normalizeMoneyInput,
   onboardingSteps,
   moneyToCents,
   type OnboardingStepId,
 } from './onboardingFlow';
-import { validateUpiId } from '@/utils/upi';
 import type { OnboardingStepProps } from './types';
 
 const stepComponents: Record<
@@ -243,9 +243,7 @@ export function OnboardingPage() {
     onPreferenceChange: handlePreferenceChange,
   };
 
-  const phoneStepIndex = onboardingSteps.findIndex((s) => s.id === 'phone');
-  const hasValidUpi = validateUpiId(draft.upiId || '');
-  const skipDisabled = isSaving || (activeStep <= phoneStepIndex && !hasValidUpi);
+  const skipDisabled = isSaving || !canSkipOnboarding(activeStep, draft.upiId);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">

@@ -13,10 +13,10 @@ function benchParse(iterations = 10000) {
 }
 
 function benchSplit(iterations = 10000) {
-  const sample = Array.from({ length: 50 }, (_, i) => ({ 
-    id: String(i), 
-    amount: 100 + i, 
-    participants: [{ id: 'user-1', amount: 100 + i }] 
+  const sample = Array.from({ length: 50 }, (_, i) => ({
+    id: String(i),
+    amount: 100 + i,
+    participants: [{ id: 'user-1', amount: 100 + i }],
   }));
   const start = performance.now();
   for (let i = 0; i < iterations; i++) {

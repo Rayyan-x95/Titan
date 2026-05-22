@@ -5,6 +5,7 @@ import { Button } from '@/components/ui';
 import { useStore } from '@/core/store';
 import { useSettings, formatMoney } from '@/core/settings';
 import { cn } from '@/utils/cn';
+import { dollarsToCentsSafe } from '@/lib/core/financeEngine';
 
 interface BudgetDialogProps {
   open: boolean;
@@ -12,7 +13,9 @@ interface BudgetDialogProps {
 }
 
 export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
-  const { budgets, addBudget, deleteBudget } = useStore();
+  const budgets = useStore((s) => s.budgets);
+  const addBudget = useStore((s) => s.addBudget);
+  const deleteBudget = useStore((s) => s.deleteBudget);
   const { currency } = useSettings();
   const [newCategory, setNewCategory] = useState('');
   const [newLimit, setNewLimit] = useState('');
@@ -24,7 +27,7 @@ export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
 
     await addBudget({
       category: newCategory,
-      limit: parseFloat(newLimit) * 100,
+      limit: dollarsToCentsSafe(Number.parseFloat(newLimit)),
       period,
     });
 

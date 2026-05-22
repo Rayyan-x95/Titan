@@ -8,17 +8,31 @@ import type {
 } from '@/core/store/types';
 import { toLocalDateString } from '@/utils/date';
 
+const wrapperCache = new WeakMap<object, TimelineItem>();
+
 export function buildTimelineItems(
   tasks: Task[],
   notes: Note[],
   expenses: Expense[],
   sharedExpenses: SharedExpense[],
 ): TimelineItem[] {
+  const getWrapper = (
+    type: 'task' | 'note' | 'expense' | 'split',
+    item: Task | Note | Expense | SharedExpense,
+  ): TimelineItem => {
+    let cached = wrapperCache.get(item);
+    if (!cached) {
+      cached = { type, data: item, timestamp: item.createdAt } as TimelineItem;
+      wrapperCache.set(item, cached);
+    }
+    return cached;
+  };
+
   const items: TimelineItem[] = [
-    ...tasks.map((t) => ({ type: 'task' as const, data: t, timestamp: t.createdAt })),
-    ...notes.map((n) => ({ type: 'note' as const, data: n, timestamp: n.createdAt })),
-    ...expenses.map((e) => ({ type: 'expense' as const, data: e, timestamp: e.createdAt })),
-    ...sharedExpenses.map((se) => ({ type: 'split' as const, data: se, timestamp: se.createdAt })),
+    ...tasks.map((t) => getWrapper('task', t)),
+    ...notes.map((n) => getWrapper('note', n)),
+    ...expenses.map((e) => getWrapper('expense', e)),
+    ...sharedExpenses.map((se) => getWrapper('split', se)),
   ];
   return items.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }

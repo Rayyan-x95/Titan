@@ -172,7 +172,8 @@ export function MarketingLanding() {
               Why Titan <span className="text-primary">Wins.</span>
             </h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
-              Fragmented apps keep your data in silos. Titan connects your life for absolute clarity and structural focus.
+              Fragmented apps keep your data in silos. Titan connects your life for absolute clarity
+              and structural focus.
             </p>
           </div>
           <ComparisonTable />
@@ -188,7 +189,8 @@ export function MarketingLanding() {
                 <Quote className="h-6 w-6" />
               </div>
               <p className="text-xl font-medium leading-relaxed italic text-foreground/80">
-                "Titan is the first system that actually connects my bank account to my habit tracker. It changed how I view my productivity."
+                "Titan is the first system that actually connects my bank account to my habit
+                tracker. It changed how I view my productivity."
               </p>
               <div>
                 <p className="font-bold">Sarah K.</p>
@@ -200,7 +202,8 @@ export function MarketingLanding() {
                 <Quote className="h-6 w-6" />
               </div>
               <p className="text-xl font-medium leading-relaxed italic text-foreground/80">
-                "As a student, keeping my notes and expenses in one place is a game changer. The offline-first speed is unmatched."
+                "As a student, keeping my notes and expenses in one place is a game changer. The
+                offline-first speed is unmatched."
               </p>
               <div>
                 <p className="font-bold">Marcus L.</p>
@@ -212,7 +215,8 @@ export function MarketingLanding() {
                 <Quote className="h-6 w-6" />
               </div>
               <p className="text-xl font-medium leading-relaxed italic text-foreground/80">
-                "Professional, private, and precise. I finally have a Life OS that I trust with my most sensitive data."
+                "Professional, private, and precise. I finally have a Life OS that I trust with my
+                most sensitive data."
               </p>
               <div>
                 <p className="font-bold">David R.</p>
@@ -347,7 +351,8 @@ export function MarketingLanding() {
             Ready to achieve structural clarity?
           </h2>
           <p className="mb-12 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join the modern professionals who have reclaimed their focus and financial clarity. No subscriptions, no cloud tracking—just pure, unified productivity.
+            Join the modern professionals who have reclaimed their focus and financial clarity. No
+            subscriptions, no cloud tracking—just pure, unified productivity.
           </p>
           <div className="flex flex-col items-center justify-center gap-6">
             <Link

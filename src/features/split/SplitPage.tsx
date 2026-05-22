@@ -23,7 +23,8 @@ export function SplitPage({ isEmbedded = false }: SplitPageProps) {
     path: '/split',
   });
 
-  const { groups, sharedExpenses } = useStore();
+  const groups = useStore((s) => s.groups);
+  const sharedExpenses = useStore((s) => s.sharedExpenses);
   const { currency } = useSettings();
 
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);

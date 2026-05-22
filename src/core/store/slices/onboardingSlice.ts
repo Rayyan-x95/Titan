@@ -60,10 +60,7 @@ export const createOnboardingSlice: StateCreator<CoreStoreState, [], [], Onboard
 
     set((state) => ({
       onboarding: next,
-      budgets: budgetSuggestions.reduce(
-        (acc, budget) => upsertItem(acc, budget),
-        state.budgets,
-      ),
+      budgets: budgetSuggestions.reduce((acc, budget) => upsertItem(acc, budget), state.budgets),
     }));
     return next;
   },

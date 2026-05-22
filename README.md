@@ -1,9 +1,9 @@
 # Titan 🦅
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.0--beta-orange.svg)](https://github.com/Rayyan-x95/Titan/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/Rayyan-x95/Titan/releases)
 [![Build Status](https://github.com/Rayyan-x95/Titan/actions/workflows/ci.yml/badge.svg)](https://github.com/Rayyan-x95/Titan/actions)
-[![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen.svg)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen.svg)](#-testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
 
 **Titan** is a purely open-source, privacy-first **Personal Life Operating System**. It unifies tasks, notes, and financial tracking into a high-performance, offline-first Progressive Web App (PWA).
@@ -13,12 +13,14 @@
 ## ✨ Features
 
 ### 🗂️ Unified Intelligence
+
 - **Tasks** — Kanban boards, subtask hierarchies, recurring tasks, due dates, energy & priority tagging
 - **Notes** — Markdown-ready notes with bidirectional linking to tasks and other notes
 - **Finance** — Expense/income tracking, multi-account management, budget monitoring, spending charts
 - **Contextual Links** — Tasks ↔ Notes ↔ Expenses linked automatically with referential integrity
 
 ### 💰 Precision Finance
+
 - Integer-based money math (cents) — no floating-point errors
 - Multi-account support (Cash, Bank, custom accounts)
 - Recurring transactions with automatic processing
@@ -26,18 +28,21 @@
 - SMS/receipt parsing for quick expense entry (OCR via Tesseract.js)
 
 ### 👥 Split Expenses
+
 - Group expense splitting (equal & weighted)
 - Friend management with automatic debt settlement
 - QR code generation for UPI payments
 - Per-group balance tracking
 
 ### 📱 PWA Native
+
 - Installable on iOS, Android, and Desktop
 - Offline-first — works without a network connection
 - Background sync and service worker caching
 - Web Share API integration
 
 ### 🔒 Privacy & Security
+
 - All data stored locally via IndexedDB — nothing leaves your device
 - App PIN lock with PBKDF2-HMAC-SHA256 hashing (100K iterations)
 - Optional biometric unlock (WebAuthn)
@@ -52,34 +57,36 @@ User Action → Zustand Store → Dexie (IndexedDB) → State Update → UI Re-r
            Pure Logic Engines (validation, normalization, sync)
 ```
 
-| Layer | Purpose | Location |
-|-------|---------|----------|
-| **UI** | React components, pages | `src/features/`, `src/components/` |
-| **State** | Zustand store (7 slices) | `src/core/store/` |
-| **Logic** | Pure business functions | `src/lib/core/` |
-| **Database** | Dexie IndexedDB (10 tables) | `src/core/db/` |
-| **Utils** | Sanitization, parsing, dates | `src/utils/` |
+| Layer        | Purpose                      | Location                           |
+| ------------ | ---------------------------- | ---------------------------------- |
+| **UI**       | React components, pages      | `src/features/`, `src/components/` |
+| **State**    | Zustand store (7 slices)     | `src/core/store/`                  |
+| **Logic**    | Pure business functions      | `src/lib/core/`                    |
+| **Database** | Dexie IndexedDB (10 tables)  | `src/core/db/`                     |
+| **Utils**    | Sanitization, parsing, dates | `src/utils/`                       |
 
 ## 🛠️ Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **Frontend** | [React 19](https://react.dev/) + [TypeScript 5](https://www.typescriptlang.org/) |
-| **Build** | [Vite 7](https://vitejs.dev/) |
-| **State** | [Zustand 5](https://docs.pmnd.rs/zustand) |
-| **Database** | [Dexie 4](https://dexie.org/) (IndexedDB) |
-| **Styling** | [Tailwind CSS 3](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/) |
-| **Charts** | [Recharts](https://recharts.org/) |
-| **Testing** | [Vitest](https://vitest.dev/) |
-| **PWA** | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) + [Workbox](https://developer.chrome.com/docs/workbox/) |
+| Category     | Technology                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| **Frontend** | [React 19](https://react.dev/) + [TypeScript 5](https://www.typescriptlang.org/)                             |
+| **Build**    | [Vite 7](https://vitejs.dev/)                                                                                |
+| **State**    | [Zustand 5](https://docs.pmnd.rs/zustand)                                                                    |
+| **Database** | [Dexie 4](https://dexie.org/) (IndexedDB)                                                                    |
+| **Styling**  | [Tailwind CSS 3](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/)                 |
+| **Charts**   | [Recharts](https://recharts.org/)                                                                            |
+| **Testing**  | [Vitest](https://vitest.dev/)                                                                                |
+| **PWA**      | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) + [Workbox](https://developer.chrome.com/docs/workbox/) |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - npm 9+
 
 ### Installation
+
 ```bash
 git clone https://github.com/Rayyan-x95/Titan.git
 cd Titan
@@ -87,11 +94,13 @@ npm install
 ```
 
 ### Development
+
 ```bash
 npm run dev         # Start dev server (http://localhost:5173)
 ```
 
 ### Testing & Quality
+
 ```bash
 npm test            # Run unit tests (Vitest)
 npm run typecheck   # Validate TypeScript
@@ -142,19 +151,21 @@ src/
 
 ## 🧪 Testing
 
-**37 tests** across **11 test files** — all passing.
+**44 tests** across **13 test files** — all passing.
 
-| Module | Coverage | Tests |
-|--------|----------|-------|
-| Task Engine | Recurrence, cycles, hierarchy, due dates | 4 |
-| Finance Engine | Balance ops, cross-account, filtering, totals | 4 |
-| Split Engine | Equal/weighted split, settlements, edge cases | 7 |
-| Task-Note Sync | Link/unlink, reconciliation, validation | 4 |
-| Parser Engine | SMS, OCR, quick capture, edge cases | 5 |
-| SMS Parser | Amount, merchant, date, category extraction | 4 |
-| Store Integration | Task CRUD, note linking, expense references | 3 |
-| Delete Cascades | Reference cleanup, hierarchy detection | 3 |
-| Integration Flows | Recurring tasks, parsing, reconciliation | 3 |
+| Module               | Coverage                                      | Tests |
+| -------------------- | --------------------------------------------- | ----- |
+| Task Engine          | Recurrence, cycles, hierarchy, due dates      | 4     |
+| Finance Engine       | Balance ops, cross-account, filtering, totals | 4     |
+| Split Engine         | Equal/weighted split, settlements, edge cases | 7     |
+| Task-Note Sync       | Link/unlink, reconciliation, validation       | 4     |
+| Parser Engine        | SMS, OCR, quick capture, edge cases           | 5     |
+| SMS Parser           | Amount, merchant, date, category extraction   | 4     |
+| Store Integration    | Task CRUD, note linking, expense references   | 7     |
+| Delete Cascades      | Reference cleanup, hierarchy detection        | 3     |
+| Integration Flows    | Recurring tasks, parsing, reconciliation      | 3     |
+| Finance Navigation   | Shared split target calculation               | 2     |
+| Onboarding Logic     | Welcome page setup and step configuration     | 1     |
 
 ```bash
 npm test                        # Run all tests
@@ -180,4 +191,4 @@ Titan is open-source software licensed under the **[MIT License](LICENSE)**.
 
 ---
 
-*Built with precision for the modern professional. Your data, your device, your rules.*
+_Built with precision for the modern professional. Your data, your device, your rules._

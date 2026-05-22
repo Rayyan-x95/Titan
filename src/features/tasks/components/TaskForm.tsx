@@ -112,9 +112,9 @@ export function TaskForm({
             onSubmit={(e) => {
               void handleSubmit(e);
             }}
-            className="relative z-10 w-full max-w-lg rounded-[2.5rem] border border-border bg-card p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
+            className="relative z-10 w-full max-w-lg rounded-[2rem] sm:rounded-[2.5rem] border border-border bg-card p-5 sm:p-8 shadow-2xl overflow-y-auto max-h-[85vh] sm:max-h-[90vh]"
           >
-            <div className="flex items-start justify-between gap-4 mb-8">
+            <div className="flex items-start justify-between gap-4 mb-5 sm:mb-8">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/80">
                   Task
@@ -335,13 +335,13 @@ export function TaskForm({
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 role="alert"
-                className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-xs font-bold text-destructive"
+                className="mt-4 sm:mt-6 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-xs font-bold text-destructive"
               >
                 {submissionError}
               </motion.p>
             )}
 
-            <div className="mt-10 flex items-center justify-end gap-3">
+            <div className="mt-6 sm:mt-10 flex items-center justify-end gap-3">
               <Button
                 type="button"
                 variant="ghost"

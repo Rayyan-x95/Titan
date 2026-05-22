@@ -35,23 +35,20 @@ function resolvePinSalt(): string {
 export async function hashPin(pin: string): Promise<string> {
   const encoder = new TextEncoder();
   const salt = encoder.encode(resolvePinSalt());
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(pin),
-    'PBKDF2',
-    false,
-    ['deriveBits', 'deriveKey']
-  );
+  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(pin), 'PBKDF2', false, [
+    'deriveBits',
+    'deriveKey',
+  ]);
 
   const derivedKey = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
       salt: salt,
       iterations: PBKDF2_ITERATIONS,
-      hash: 'SHA-256'
+      hash: 'SHA-256',
     },
     keyMaterial,
-    256
+    256,
   );
 
   const hashArray = Array.from(new Uint8Array(derivedKey));

@@ -55,13 +55,18 @@
   );
   box-shadow: var(--ui-shadow-soft), var(--ui-shadow-subtle);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, border-color, box-shadow;
 }
 
 .ui-card:hover {
-  border-color: color-mix(in srgb, var(--ui-primary-strong) 36%, var(--ui-border));
+  border-color: color-mix(in srgb, var(--ui-primary-strong) 45%, var(--ui-border));
+  box-shadow:
+    var(--ui-shadow-soft),
+    0 0 25px rgba(0, 112, 243, 0.08);
+  transform: translateY(-2px);
 }
 
 .ui-button {

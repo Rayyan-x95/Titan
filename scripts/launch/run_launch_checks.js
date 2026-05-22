@@ -54,16 +54,15 @@ async function main() {
   console.log('Titan Launch Orchestrator starting...');
   await ensureSkeletons();
 
-  // Parallel core validations
   const tasks = [
     { cmd: 'npm run typecheck', title: 'TypeScript typecheck' },
     { cmd: 'npm test -s', title: 'Test Suite' },
-    { cmd: 'npm run build', title: 'Production Build' },
     { cmd: 'npm run lint', title: 'Lint' },
-    { cmd: 'npm run format', title: 'Format' },
+    { cmd: 'npm run format:check', title: 'Format' },
   ];
 
   const results = await Promise.all(tasks.map((t) => runCmd(t.cmd, t.title)));
+  results.push(await runCmd('npm run build', 'Production Build'));
 
   // STEP-agnostic quick checks for indexing assets
   const assets = [
@@ -80,8 +79,16 @@ async function main() {
 
   // Persist summary to docs for quick review
   const outPath = path.join(__dirname, '../../docs/launch-health-summary.json');
-  fs.writeFileSync(outPath, JSON.stringify(summary, null, 2), 'utf8');
+  fs.writeFileSync(outPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   console.log('\nLaunch health summary written to', outPath);
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length > 0) {
+    console.error(
+      `\n${failed.length} launch check(s) failed: ${failed.map((r) => r.title).join(', ')}`,
+    );
+    process.exit(1);
+  }
+
   console.log('\nDone. Review docs/launch-health-summary.json for results.');
 }
 

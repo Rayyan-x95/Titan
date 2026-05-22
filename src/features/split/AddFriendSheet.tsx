@@ -9,7 +9,7 @@ interface AddFriendSheetProps {
 }
 
 export function AddFriendSheet({ open, onOpenChange }: AddFriendSheetProps) {
-  const { addFriend } = useStore();
+  const addFriend = useStore((s) => s.addFriend);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [upiId, setUpiId] = useState('');

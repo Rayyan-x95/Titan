@@ -48,10 +48,15 @@ export function BlogPost() {
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl">{post.title}</h1>
         </header>
 
-        <div
-          className="prose prose-invert prose-primary max-w-none text-lg leading-relaxed text-muted-foreground"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+        <div className="prose prose-invert prose-primary max-w-none text-lg leading-relaxed text-muted-foreground">
+          {post.content.map((block) =>
+            block.type === 'heading' ? (
+              <h2 key={block.text}>{block.text}</h2>
+            ) : (
+              <p key={block.text}>{block.text}</p>
+            ),
+          )}
+        </div>
 
         <div className="mt-20 border-t border-border/40 pt-12">
           <h3 className="mb-6 text-2xl font-bold">More from Titan</h3>

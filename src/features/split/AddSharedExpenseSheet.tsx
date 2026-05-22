@@ -4,7 +4,6 @@ import { Button } from '@/components/ui';
 import { useStore } from '@/core/store';
 import type { Group } from '@/core/store/types';
 import { cn } from '@/utils/cn';
-import { toLocalDateString } from '@/utils/date';
 import { useSettings } from '@/core/settings';
 import { splitEqual } from '@/lib/core/splitEngine';
 import { dollarsToCentsSafe } from '@/lib/core/financeEngine';
@@ -22,7 +21,7 @@ export function AddSharedExpenseSheet({
   group,
   members,
 }: AddSharedExpenseSheetProps) {
-  const { addSharedExpense } = useStore();
+  const addSharedExpense = useStore((s) => s.addSharedExpense);
   const { currency } = useSettings();
   const [description, setDescription] = useState('');
   const [amountInput, setAmountInput] = useState('');
@@ -59,8 +58,6 @@ export function AddSharedExpenseSheet({
         groupId: group.id,
         participants: shares,
       });
-      const today = toLocalDateString(new Date());
-      await useStore.getState().updateSnapshot(today, 'split', amountCents);
       onOpenChange(false);
       setDescription('');
       setAmountInput('');

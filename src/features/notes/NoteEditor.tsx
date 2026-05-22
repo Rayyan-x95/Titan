@@ -163,9 +163,7 @@ export function NoteEditor({
                   <p className="text-[10px] font-black uppercase tracking-[0.6em] text-blue-400 opacity-80">
                     Deep Thought
                   </p>
-                  <h3 className="mt-2 text-4xl font-black tracking-tighter text-white">
-                    {title}
-                  </h3>
+                  <h3 className="mt-2 text-4xl font-black tracking-tighter text-white">{title}</h3>
                 </div>
               </div>
               <Button

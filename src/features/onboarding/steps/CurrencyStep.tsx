@@ -1,10 +1,22 @@
-import { IndianRupee, DollarSign, Euro, PoundSterling, Coins, type LucideProps } from 'lucide-react';
+import {
+  IndianRupee,
+  DollarSign,
+  Euro,
+  PoundSterling,
+  Coins,
+  type LucideProps,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 import { cn } from '@/utils/cn';
 import type { OnboardingStepProps } from '../types';
 import type { CurrencyCode } from '@/core/settings';
 
-const currencies: { id: CurrencyCode; label: string; symbol: string; icon: ComponentType<LucideProps> }[] = [
+const currencies: {
+  id: CurrencyCode;
+  label: string;
+  symbol: string;
+  icon: ComponentType<LucideProps>;
+}[] = [
   { id: 'INR', label: 'Indian Rupee', symbol: '₹', icon: IndianRupee },
   { id: 'USD', label: 'US Dollar', symbol: '$', icon: DollarSign },
   { id: 'EUR', label: 'Euro', symbol: '€', icon: Euro },
@@ -28,7 +40,7 @@ export default function CurrencyStep({ profile, onProfileChange }: OnboardingSte
                 'group relative flex items-center gap-4 rounded-[2rem] border p-6 text-left transition-all duration-300',
                 isSelected
                   ? 'border-blue-500 bg-blue-500/10 shadow-glow-blue'
-                  : 'border-white/5 bg-white/2 hover:border-white/10 hover:bg-white/5'
+                  : 'border-white/5 bg-white/2 hover:border-white/10 hover:bg-white/5',
               )}
             >
               <div
@@ -36,7 +48,7 @@ export default function CurrencyStep({ profile, onProfileChange }: OnboardingSte
                   'flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300',
                   isSelected
                     ? 'bg-blue-500 text-white shadow-glow'
-                    : 'bg-white/5 text-slate-500 group-hover:bg-white/10 group-hover:text-slate-300'
+                    : 'bg-white/5 text-slate-500 group-hover:bg-white/10 group-hover:text-slate-300',
                 )}
               >
                 <Icon className="h-6 w-6" />
@@ -45,7 +57,7 @@ export default function CurrencyStep({ profile, onProfileChange }: OnboardingSte
                 <p
                   className={cn(
                     'text-sm font-black uppercase tracking-widest transition-colors',
-                    isSelected ? 'text-white' : 'text-slate-400 group-hover:text-white'
+                    isSelected ? 'text-white' : 'text-slate-400 group-hover:text-white',
                   )}
                 >
                   {currency.id}

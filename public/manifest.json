@@ -71,5 +71,31 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
+  "screenshots": [
+    {
+      "src": "/Opengraph.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Titan Dashboard - Professional Unified Workspace"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Today's Tasks",
+      "short_name": "Tasks",
+      "description": "Quick view of today's tasks",
+      "tag": "today-tasks",
+      "template": "today-tasks-template",
+      "ms_ac_template": "/pwa/widgets.json",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
   "prefer_related_applications": false
 }

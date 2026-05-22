@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, Users } from 'lucide-react';
@@ -10,6 +10,8 @@ import { useSeo } from '@/hooks/useSeo';
 import { ExpenseForm } from './ExpenseForm';
 import { cn } from '@/utils/cn';
 import { parseQuickCapture } from '@/lib/core/parserEngine';
+import { dollarsToCentsSafe } from '@/lib/core/financeEngine';
+import { getFinanceItemTarget } from './financeNavigation';
 import {
   useTotalBalance,
   useMonthlySpend,
@@ -19,7 +21,6 @@ import {
   usePersonalExpenses,
   useSharedExpenseItems,
 } from '@/core/store/selectors';
-import { warmupOCR } from '@/utils/parserEngine';
 
 type DisplayedExpense = Pick<
   Expense,
@@ -85,10 +86,6 @@ export function FinancePage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [newTransactionType, setNewTransactionType] = useState<'expense' | 'income'>('expense');
   const [quickInput, setQuickInput] = useState('');
-
-  useEffect(() => {
-    void warmupOCR();
-  }, []);
 
   const displayedExpenses = useMemo<DisplayedExpense[]>(() => {
     if (viewShared) {
@@ -173,15 +170,15 @@ export function FinancePage() {
       description="Large balance first, fast actions second, and lightweight insight always in context."
     >
       <div className="space-y-6 pb-36 lg:pb-8">
-        <section className="relative overflow-hidden titan-section glass-panel p-10 md:p-14 border-white/5 group">
+        <section className="relative overflow-hidden titan-section glass-panel p-6 sm:p-10 md:p-14 border-white/5 group">
           <div className="relative z-10 flex flex-col items-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-blue-400/60">
               Total Liquidity
             </p>
-            <h1 className="titan-metric mt-6 text-white text-5xl md:text-8xl tracking-tight text-center">
+            <h1 className="titan-metric mt-6 text-white text-4xl sm:text-5xl md:text-7xl lg:text-8xl tracking-tight text-center">
               {formatMoney(totalBalance, currency)}
             </h1>
-            <div className="mt-10 grid grid-cols-2 gap-8 w-full max-w-md">
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:gap-8 w-full max-w-md">
               <div className="flex flex-col items-center border-r border-white/5">
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
                   Monthly Income
@@ -363,14 +360,15 @@ export function FinancePage() {
                       <button
                         key={it.id}
                         onClick={() => {
-                          if (!it.shared) {
+                          const target = getFinanceItemTarget(it);
+                          if (target) {
+                            void navigate(target);
+                          } else {
                             const expense = personalExpenses.find((e) => e.id === it.id);
                             if (expense) {
                               setEditingExpense(expense);
                               setIsExpenseFormOpen(true);
                             }
-                          } else {
-                            void navigate(`/split/${it.id}`);
                           }
                         }}
                         className="glass-panel group flex w-full items-center justify-between rounded-2xl p-5 transition-all hover:bg-white/5 border-white/5 active:scale-[0.99]"
@@ -439,7 +437,7 @@ export function FinancePage() {
           onSubmit={async (values) => {
             try {
               const payload: ExpenseInput & ExpenseUpdate = {
-                amount: Math.round(values.amountDollars * 100),
+                amount: dollarsToCentsSafe(values.amountDollars),
                 category: values.category,
                 type: values.type,
                 accountId: values.accountId,

@@ -52,6 +52,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://titanapp.qzz.io/privacy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://titanapp.qzz.io/terms</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://titanapp.qzz.io/personal-life-os</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

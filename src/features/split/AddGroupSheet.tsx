@@ -10,7 +10,8 @@ interface AddGroupSheetProps {
 }
 
 export function AddGroupSheet({ open, onOpenChange }: AddGroupSheetProps) {
-  const { friends, addGroup } = useStore();
+  const friends = useStore((s) => s.friends);
+  const addGroup = useStore((s) => s.addGroup);
   const [name, setName] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);

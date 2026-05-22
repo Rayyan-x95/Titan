@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef, useEffect, useTransition, type FormEvent } from 'react';
 import { CheckCircle2, Search, Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useSettings } from '@/core/settings';
@@ -22,7 +22,8 @@ export function QuickCapture() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleCapture = () => {
+  const handleCapture = (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     const text = value.trim();
     if (!text) return;
 
@@ -81,7 +82,7 @@ export function QuickCapture() {
 
   return (
     <form
-      action={handleCapture}
+      onSubmit={handleCapture}
       className={`glass-panel relative flex items-center gap-4 px-6 py-4 transition-all duration-300 ${statusClass}`}
     >
       <div

@@ -109,6 +109,10 @@ export const goalOptions: { id: FinancialGoal; label: string; description: strin
 export function clampStep(step: number) {
   return Math.max(0, Math.min(step, onboardingSteps.length - 1));
 }
+export function canSkipOnboarding(activeStep: number, upiId?: string) {
+  const phoneStepIndex = onboardingSteps.findIndex((step) => step.id === 'phone');
+  return activeStep < phoneStepIndex || validateUpiId(upiId || '');
+}
 export function normalizeMoneyInput(value: string) {
   const numeric = value.replace(/[^\d.]/g, '');
   const [whole, ...decimalParts] = numeric.split('.');

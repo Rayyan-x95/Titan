@@ -1,6 +1,6 @@
 @import './theme.css';
 @import './animations.css';
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
+@import './fonts.css';
 
 @tailwind base;
 @tailwind components;
@@ -59,12 +59,7 @@ body,
 body {
   margin: 0;
   min-width: 320px;
-  background-color: #000;
-  background-image:
-    radial-gradient(circle at 0% 0%, rgba(0, 112, 243, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(121, 40, 202, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
-  background-attachment: fixed;
+  background-color: #030303;
   color: hsl(var(--foreground));
   font-family:
     'DM Sans',
@@ -80,55 +75,6 @@ body {
   overscroll-behavior-y: none; /* Prevent rubber-banding on body */
   -webkit-tap-highlight-color: transparent; /* Remove native blue highlight */
   touch-action: manipulation; /* Disable double-tap zoom for faster clicks */
-}
-
-/* Morphing Background Blobs */
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  filter: blur(120px);
-  z-index: -1;
-  opacity: 0.1;
-  pointer-events: none;
-}
-
-body::before {
-  top: -150px;
-  left: -150px;
-  background: #0070f3;
-  animation: blob-morph 25s infinite alternate;
-}
-
-body::after {
-  bottom: -200px;
-  right: -200px;
-  background: #7928ca;
-  animation: blob-morph 30s infinite alternate-reverse;
-}
-
-@keyframes blob-morph {
-  0% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  }
-  50% {
-    transform: translate(100px, 50px) scale(1.1) rotate(90deg);
-    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
-  }
-  100% {
-    transform: translate(-50px, 100px) scale(0.9) rotate(180deg);
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  }
-}
-
-@media (max-width: 768px), (hover: none) and (pointer: coarse) {
-  body {
-    background-attachment: scroll;
-  }
 }
 
 .animate-delay-3000 {
@@ -157,9 +103,31 @@ a {
   position: relative;
   overflow: hidden;
   border-radius: var(--ui-radius-xl);
-  box-shadow: 
+  box-shadow:
     0 10px 40px -10px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, border-color, box-shadow;
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 15px 45px -8px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(0, 112, 243, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Glowing scroll progress bar */
+.scroll-progress-bar {
+  background: linear-gradient(90deg, #0070f3 0%, #00dfd8 50%, #7928ca 100%);
+  box-shadow:
+    0 1px 8px rgba(0, 112, 243, 0.4),
+    0 0 15px rgba(121, 40, 202, 0.3);
 }
 
 .titan-card {
@@ -174,23 +142,8 @@ a {
   border-radius: var(--ui-radius-md);
 }
 
-.glass-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--glass-border-iridescent);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask-composite: destination-out;
-  padding: 1px;
-  pointer-events: none;
-  opacity: 0.8;
-}
-
 .mesh-gradient {
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, hsla(214, 98%, 57%, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 0%, hsla(208, 70%, 16%, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, hsla(191, 96%, 52%, 0.1) 0px, transparent 50%),
@@ -369,7 +322,7 @@ html[data-compact='true'] .compact-nav button {
 
 /* Mobile Touch Area Enforcement */
 @media (max-width: 640px) {
-  button, 
+  button,
   a.flex-1,
   .nav-item {
     min-height: 48px;
@@ -393,7 +346,7 @@ html[data-compact='true'] .compact-nav button {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

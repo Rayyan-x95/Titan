@@ -47,7 +47,8 @@ export class ErrorBoundary extends Component<Props, State> {
           </h2>
           <p className="mt-4 max-w-md text-sm font-medium text-slate-500 leading-relaxed">
             {this.props.featureName ? `${this.props.featureName} failed to load. ` : ''}
-            An unexpected error occurred locally. To protect your privacy, no data was sent automatically.
+            An unexpected error occurred locally. To protect your privacy, no data was sent
+            automatically.
           </p>
           {this.state.error && (
             <pre className="mt-6 max-w-full overflow-auto rounded-xl bg-red-500/5 p-4 text-left text-[10px] font-mono text-red-400/60 border border-red-500/10">
@@ -69,7 +70,9 @@ export class ErrorBoundary extends Component<Props, State> {
                   stack: this.state.error?.stack,
                   timestamp: new Date().toISOString(),
                 };
-                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const blob = new Blob([JSON.stringify(report, null, 2)], {
+                  type: 'application/json',
+                });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;

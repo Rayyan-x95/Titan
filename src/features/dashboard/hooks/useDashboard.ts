@@ -71,12 +71,23 @@ export function useDashboard() {
       const useTask = lastTask.createdAt >= lastNote.createdAt;
       return useTask
         ? { type: 'task' as const, id: lastTask.id, title: lastTask.title, to: '/tasks' }
-        : { type: 'note' as const, id: lastNote.id, title: noteTitle(lastNote.content), to: '/notes' };
+        : {
+            type: 'note' as const,
+            id: lastNote.id,
+            title: noteTitle(lastNote.content),
+            to: '/notes',
+          };
     }
 
-    if (lastTask) return { type: 'task' as const, id: lastTask.id, title: lastTask.title, to: '/tasks' };
+    if (lastTask)
+      return { type: 'task' as const, id: lastTask.id, title: lastTask.title, to: '/tasks' };
     if (lastNote)
-      return { type: 'note' as const, id: lastNote.id, title: noteTitle(lastNote.content), to: '/notes' };
+      return {
+        type: 'note' as const,
+        id: lastNote.id,
+        title: noteTitle(lastNote.content),
+        to: '/notes',
+      };
     return null;
   }, [tasks, notes]);
 
