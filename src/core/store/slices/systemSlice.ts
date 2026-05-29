@@ -49,7 +49,20 @@ export interface SystemSlice {
     value?: number,
   ) => Promise<void>;
   recomputeSnapshots: () => Promise<void>;
+  repairDataIntegrity: () => Promise<void>;
   addLog: (level: SystemLog['level'], category: string, message: string) => void;
+}
+
+function canonicalizeCategories<T extends { category: string }>(items: T[]) {
+  const labels = new Map<string, string>();
+
+  return items.map((item) => {
+    const normalized = item.category.trim().toLowerCase();
+    const canonical =
+      labels.get(normalized) ?? (sanitizeString(item.category, 50).trim() || item.category);
+    labels.set(normalized, canonical);
+    return canonical === item.category ? item : { ...item, category: canonical };
+  });
 }
 
 async function hydrateFromDatabase() {
@@ -363,5 +376,58 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     await db.dailySnapshots.clear();
     await db.dailySnapshots.bulkPut(snapshots);
     set({ dailySnapshots: snapshots });
+  },
+
+  repairDataIntegrity: async () => {
+    await get().processRecurringTasks();
+    await get().processRecurringTransactions();
+
+    const clean = reconcileIntegrity(
+      get().tasks,
+      get().notes,
+      get().expenses,
+      get().sharedExpenses,
+      get().groups,
+      get().friends,
+    );
+
+    const expenses = canonicalizeCategories(clean.expenses).map((expense) => ({
+      ...expense,
+      recurrenceRule: normalizeExpenseRecurrenceRule(expense.recurrenceRule),
+    }));
+    const budgets = canonicalizeCategories(get().budgets);
+    const dailySnapshots = computeDailySnapshots(
+      clean.tasks,
+      clean.notes,
+      expenses,
+      clean.sharedExpenses,
+    );
+
+    await db.transaction('rw', db.tables, async () => {
+      await db.tasks.bulkPut(clean.tasks);
+      await db.notes.bulkPut(clean.notes);
+      await db.expenses.bulkPut(expenses);
+      await db.sharedExpenses.bulkPut(clean.sharedExpenses);
+      await db.groups.bulkPut(clean.groups);
+      await db.friends.bulkPut(clean.friends);
+      await db.budgets.bulkPut(budgets);
+      await db.accounts.bulkPut(get().accounts);
+      await db.dailySnapshots.clear();
+      await db.dailySnapshots.bulkPut(dailySnapshots);
+      await db.onboarding.put(get().onboarding);
+    });
+
+    set({
+      tasks: clean.tasks,
+      notes: clean.notes,
+      expenses,
+      sharedExpenses: clean.sharedExpenses,
+      groups: clean.groups,
+      friends: clean.friends,
+      budgets,
+      dailySnapshots,
+    });
+
+    get().addLog('info', 'System', 'Data integrity repair completed');
   },
 });

@@ -7,14 +7,21 @@ export interface PwaUpdateController {
 }
 
 export function createPwaUpdateController(): PwaUpdateController {
+  const updateCheckIntervalMs = 60 * 60 * 1000;
   const listeners = new Set<(available: boolean) => void>();
   let wb: Workbox | null = null;
   let updateDetected = false;
+  let updateCheckIntervalId: number | undefined;
 
   const notify = (available: boolean) => {
     for (const listener of listeners) {
       listener(available);
     }
+  };
+
+  const checkForUpdate = () => {
+    if (document.visibilityState !== 'visible') return;
+    void wb?.update();
   };
 
   const ensureRegistered = () => {
@@ -37,6 +44,11 @@ export function createPwaUpdateController(): PwaUpdateController {
     });
 
     void wb.register();
+
+    window.addEventListener('online', checkForUpdate);
+    document.addEventListener('visibilitychange', checkForUpdate);
+    updateCheckIntervalId = window.setInterval(checkForUpdate, updateCheckIntervalMs);
+    checkForUpdate();
   };
 
   ensureRegistered();
@@ -82,6 +94,9 @@ export function createPwaUpdateController(): PwaUpdateController {
       }
 
       await controllerChangePromise;
+      if (updateCheckIntervalId !== undefined) {
+        window.clearInterval(updateCheckIntervalId);
+      }
       window.location.reload();
     },
   };

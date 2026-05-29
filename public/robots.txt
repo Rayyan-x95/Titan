@@ -10,4 +10,4 @@ Disallow: /tasks
 Disallow: /notes
 Disallow: /finance
 
-Sitemap: https://titanapp.qzz.io/sitemap.xml
+Sitemap: https://titan.ninety5.in/sitemap.xml

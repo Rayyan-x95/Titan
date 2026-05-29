@@ -27,6 +27,9 @@ const TimelinePage = lazy(() =>
   import('@/features/timeline').then((m) => ({ default: m.TimelineView })),
 );
 const SplitPage = lazy(() => import('@/features/split').then((m) => ({ default: m.SplitPage })));
+const IntelligencePage = lazy(() =>
+  import('@/features/intelligence').then((m) => ({ default: m.IntelligencePage })),
+);
 const LandingPage = lazy(() =>
   import('@/features/landing').then((m) => ({ default: m.LandingPage })),
 );
@@ -161,6 +164,7 @@ export default function App() {
               <Route path="tasks" element={<TasksPage />} />
               <Route path="notes" element={<NotesPage />} />
               <Route path="finance" element={<FinancePage />} />
+              <Route path="intelligence" element={<IntelligencePage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="share" element={<ShareTargetPage />} />
             </Route>

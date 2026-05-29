@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = 'https://titanapp.qzz.io';
+const BASE_URL = 'https://titan.ninety5.in';
 const ROUTES = [
   '/', // App Dashboard
   '/home', // Marketing Landing

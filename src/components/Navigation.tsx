@@ -1,4 +1,11 @@
-import { LayoutDashboard, SquareCheckBig, Landmark, NotebookPen, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  SquareCheckBig,
+  Landmark,
+  NotebookPen,
+  Settings,
+  Sparkles,
+} from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
@@ -8,6 +15,7 @@ const items = [
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/finance', label: 'Money', icon: Landmark },
   { to: '/notes', label: 'Thoughts', icon: NotebookPen },
+  { to: '/intelligence', label: 'Intel', icon: Sparkles },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 

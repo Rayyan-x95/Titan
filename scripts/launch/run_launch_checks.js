@@ -79,6 +79,7 @@ async function main() {
 
   // Persist summary to docs for quick review
   const outPath = path.join(__dirname, '../../docs/launch-health-summary.json');
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   console.log('\nLaunch health summary written to', outPath);
   const failed = results.filter((r) => !r.ok);

@@ -73,6 +73,13 @@ registerRoute(
     request.destination === 'worker',
   new StaleWhileRevalidate({
     cacheName: 'titan-static-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 80,
+        maxAgeSeconds: 60 * 60 * 24 * 14,
+        purgeOnQuotaError: true,
+      }),
+    ],
   }),
 );
 
@@ -84,6 +91,7 @@ registerRoute(
       new ExpirationPlugin({
         maxEntries: 120,
         maxAgeSeconds: 60 * 60 * 24 * 30,
+        purgeOnQuotaError: true,
       }),
     ],
   }),

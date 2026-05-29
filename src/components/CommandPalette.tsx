@@ -9,6 +9,7 @@ import {
   ArrowRight,
   CheckCircle2,
   History,
+  Sparkles,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { formatMoney } from '@/core/settings';
@@ -83,6 +84,15 @@ export function CommandPalette() {
           icon: CreditCard,
           action: () => {
             void navigate('/finance');
+          },
+          type: 'action' as const,
+        },
+        {
+          id: 'nav-intelligence',
+          title: 'Go to Intelligence',
+          icon: Sparkles,
+          action: () => {
+            void navigate('/intelligence');
           },
           type: 'action' as const,
         },

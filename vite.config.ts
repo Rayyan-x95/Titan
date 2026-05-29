@@ -3,6 +3,28 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const deferredPrecacheChunks = [
+  /^assets\/AnswerBlock-/,
+  /^assets\/BlogPage-/,
+  /^assets\/BlogPost-/,
+  /^assets\/ExpenseTrackerPage-/,
+  /^assets\/FeaturesPage-/,
+  /^assets\/InstallPage-/,
+  /^assets\/LifeManagementAppPage-/,
+  /^assets\/LifeTimelinePage-/,
+  /^assets\/MarketingLanding-/,
+  /^assets\/MarketingLayout-/,
+  /^assets\/PersonalLifeOSPage-/,
+  /^assets\/PrivacyPage-/,
+  /^assets\/SharedExpensesPage-/,
+  /^assets\/SplitExpensesAppPage-/,
+  /^assets\/TaskManagerPage-/,
+  /^assets\/TermsPage-/,
+  /^assets\/WhatIsTitanPage-/,
+  /^assets\/pdf-/,
+  /^assets\/pdf\.worker\./,
+];
+
 export default defineConfig({
   plugins: [
     react(),
@@ -15,6 +37,14 @@ export default defineConfig({
       manifest: false,
       injectManifest: {
         globIgnores: ['**/sitemap.xml', '**/robots.txt'],
+        manifestTransforms: [
+          async (entries) => ({
+            manifest: entries.filter((entry) => {
+              const url = entry.url.replace(/^\//, '');
+              return !deferredPrecacheChunks.some((pattern) => pattern.test(url));
+            }),
+          }),
+        ],
       },
       devOptions: {
         enabled: false,

@@ -41,7 +41,7 @@ export function InstallPage() {
                   1
                 </span>
                 <span>
-                  Open <strong>titanapp.qzz.io</strong> in your mobile browser (Safari or Chrome).
+                  Open <strong>titan.ninety5.in</strong> in your mobile browser (Safari or Chrome).
                 </span>
               </li>
               <li className="flex gap-4">

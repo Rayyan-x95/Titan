@@ -98,7 +98,7 @@ export function TermsPage() {
                 <h4 className="font-bold text-primary">Open Source</h4>
                 <p className="text-sm text-muted-foreground">
                   Titan is open-source software. These terms apply to the official hosted instance
-                  at titanapp.qzz.io. If you are self-hosting your own version of Titan, you are
+                  at titan.ninety5.in. If you are self-hosting your own version of Titan, you are
                   responsible for your own terms.
                 </p>
               </div>
