@@ -92,7 +92,7 @@ export function CommandPalette() {
           title: 'Go to Intelligence',
           icon: Sparkles,
           action: () => {
-            void navigate('/intelligence');
+            void navigate('/settings?tab=intelligence');
           },
           type: 'action' as const,
         },

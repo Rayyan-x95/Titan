@@ -16,7 +16,7 @@ const items = [
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/finance', label: 'Money', icon: Landmark },
   { to: '/notes', label: 'Thoughts', icon: NotebookPen },
-  { to: '/intelligence', label: 'Intelligence', icon: Sparkles },
+  { to: '/settings?tab=intelligence', label: 'Intelligence', icon: Sparkles },
 ] as const;
 
 export function Sidebar() {
@@ -45,10 +45,16 @@ export function Sidebar() {
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
+          const isIntel = item.label === 'Intelligence';
+          const isIntelTabActive =
+            location.pathname === '/settings' && location.search.includes('tab=intelligence');
+
           const active =
-            location.pathname === item.to ||
-            (item.to === '/' && location.pathname === '/') ||
-            isMoneyActive;
+            (isIntel && isIntelTabActive) ||
+            (!isIntel &&
+              (location.pathname === item.to ||
+                (item.to === '/' && location.pathname === '/') ||
+                isMoneyActive));
 
           return (
             <NavLink
@@ -89,14 +95,12 @@ export function Sidebar() {
       <div className="p-8 border-t border-white/5 space-y-4 relative z-10">
         <NavLink
           to="/settings"
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-4 px-6 py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] transition-all',
-              isActive
-                ? 'bg-white/5 text-white border border-white/5'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5',
-            )
-          }
+          className={cn(
+            'flex items-center gap-4 px-6 py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] transition-all',
+            location.pathname === '/settings' && !location.search.includes('tab=intelligence')
+              ? 'bg-white/5 text-white border border-white/5'
+              : 'text-slate-500 hover:text-slate-300 hover:bg-white/5',
+          )}
         >
           <Settings className="h-5 w-5" />
           <span>Settings</span>

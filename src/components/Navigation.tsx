@@ -15,7 +15,7 @@ const items = [
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/finance', label: 'Money', icon: Landmark },
   { to: '/notes', label: 'Thoughts', icon: NotebookPen },
-  { to: '/intelligence', label: 'Intel', icon: Sparkles },
+  { to: '/settings?tab=intelligence', label: 'Intel', icon: Sparkles },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -33,10 +33,21 @@ export function Navigation() {
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
+          const isIntel = item.label === 'Intel';
+          const isSettings = item.label === 'Settings';
+          const isIntelTabActive =
+            location.pathname === '/settings' && location.search.includes('tab=intelligence');
+
           const active =
-            location.pathname === item.to ||
-            (item.to === '/' && location.pathname === '/') ||
-            isMoneyActive;
+            (isIntel && isIntelTabActive) ||
+            (isSettings &&
+              location.pathname === '/settings' &&
+              !location.search.includes('tab=intelligence')) ||
+            (!isIntel &&
+              !isSettings &&
+              (location.pathname === item.to ||
+                (item.to === '/' && location.pathname === '/') ||
+                isMoneyActive));
 
           return (
             <NavLink
