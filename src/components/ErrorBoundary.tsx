@@ -24,6 +24,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+
+    const isChunkError =
+      error.name === 'ChunkLoadError' ||
+      /loading chunk/i.test(error.message) ||
+      /Failed to fetch dynamically imported module/i.test(error.message);
+
+    if (isChunkError) {
+      // Reload the page after a brief delay to allow the updating screen to render
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
   }
 
   private handleReset = () => {
@@ -35,6 +47,27 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
+      }
+
+      const error = this.state.error;
+      const isChunkError =
+        error &&
+        (error.name === 'ChunkLoadError' ||
+          /loading chunk/i.test(error.message) ||
+          /Failed to fetch dynamically imported module/i.test(error.message));
+
+      if (isChunkError) {
+        return (
+          <div className="flex min-h-[400px] w-full flex-col items-center justify-center p-8 text-center">
+            <div className="mb-6 flex h-16 w-16 animate-spin items-center justify-center rounded-3xl bg-primary/10 text-primary border border-primary/20 shadow-glow">
+              <RefreshCcw className="h-8 w-8" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">Updating Titan...</h2>
+            <p className="mt-4 max-w-md text-sm font-medium text-slate-500 leading-relaxed">
+              A newer version of Titan is being loaded. Refreshing to complete the update...
+            </p>
+          </div>
+        );
       }
 
       return (

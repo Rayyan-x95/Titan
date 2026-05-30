@@ -12,7 +12,6 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "scope": "/",
-  "orientation": "portrait-primary",
   "share_target": {
     "action": "/share",
     "method": "POST",
@@ -79,6 +78,13 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Titan Dashboard - Professional Unified Workspace"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Titan Mobile Dashboard - Sleek Personal Operating System"
     }
   ],
   "widgets": [

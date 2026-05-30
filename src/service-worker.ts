@@ -3,7 +3,7 @@
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
 import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 declare let self: ServiceWorkerGlobalScope;
@@ -97,9 +97,31 @@ registerRoute(
   }),
 );
 
-const appShellHandler = new NetworkFirst({
+// ─── Third-Party Workers & CDN Assets ─────────────────────────────────────────
+
+// Cache heavy third-party CDN worker resources and language models for 100% offline support
+registerRoute(
+  ({ url }) =>
+    url.origin === 'https://unpkg.com' ||
+    url.origin === 'https://cdn.jsdelivr.net' ||
+    url.pathname.includes('tesseract') ||
+    url.pathname.includes('pdf.worker'),
+  new CacheFirst({
+    cacheName: 'titan-third-party-assets',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 30,
+        maxAgeSeconds: 60 * 60 * 24 * 90, // 90 days - worker scripts and language data are heavy and immutable
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
+
+// ─── Navigation Route & SPA App Shell ─────────────────────────────────────────
+
+const appShellHandler = new StaleWhileRevalidate({
   cacheName: 'titan-app-shell',
-  networkTimeoutSeconds: 3,
 });
 
 const navigationRoute = new NavigationRoute(appShellHandler, {

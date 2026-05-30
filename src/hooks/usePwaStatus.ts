@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 declare global {
   interface WindowEventMap {
@@ -20,13 +20,19 @@ export function usePwaStatus(): PwaStatus {
   );
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
+  const setUpdateAvailableSafe = useCallback((available: boolean) => {
+    setUpdateAvailable((prev) => (prev !== available ? available : prev));
+  }, []);
+
   useEffect(() => {
     const onInstallAvailability = (event: CustomEvent<boolean>) => {
-      setInstallAvailable(Boolean(event.detail));
+      setInstallAvailable((prev) =>
+        prev !== Boolean(event.detail) ? Boolean(event.detail) : prev,
+      );
     };
 
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
+    const onOnline = () => setIsOnline((prev) => (prev !== true ? true : prev));
+    const onOffline = () => setIsOnline((prev) => (prev !== false ? false : prev));
 
     window.addEventListener(
       'titan:pwa-install-availability',
@@ -34,7 +40,7 @@ export function usePwaStatus(): PwaStatus {
     );
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
-    setIsOnline(navigator.onLine);
+    setIsOnline((prev) => (prev !== navigator.onLine ? navigator.onLine : prev));
 
     return () => {
       window.removeEventListener(
@@ -46,5 +52,10 @@ export function usePwaStatus(): PwaStatus {
     };
   }, []);
 
-  return { installAvailable, isOnline, updateAvailable, setUpdateAvailable };
+  return {
+    installAvailable,
+    isOnline,
+    updateAvailable,
+    setUpdateAvailable: setUpdateAvailableSafe,
+  };
 }

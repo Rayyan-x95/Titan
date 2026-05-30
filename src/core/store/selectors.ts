@@ -1,4 +1,4 @@
-import { useShallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './useStore';
 import { toLocalDateString, isToday } from '@/utils/date';
 import { buildTimelineItems } from '@/lib/core/timelineEngine';

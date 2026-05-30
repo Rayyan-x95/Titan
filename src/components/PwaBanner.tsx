@@ -16,7 +16,7 @@ export function PwaBanner() {
     return updateController.subscribe((available) => {
       setUpdateAvailable(available);
       if (!available) {
-        setDismissedUpdate(false);
+        setDismissedUpdate((prev) => (prev !== false ? false : prev));
       }
     });
   }, [setUpdateAvailable, updateController]);
