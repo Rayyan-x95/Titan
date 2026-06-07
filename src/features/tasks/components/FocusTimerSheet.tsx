@@ -155,7 +155,7 @@ export function FocusTimerSheet({ open, onOpenChange, task }: FocusTimerSheetPro
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-          className="relative glass-panel w-full max-w-md overflow-hidden rounded-[2.5rem] p-8 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10 text-center"
+          className="relative glass-panel w-full max-w-md max-h-[95vh] overflow-y-auto rounded-[2.5rem] p-8 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] z-10 text-center"
         >
           {/* Close Header button */}
           <button

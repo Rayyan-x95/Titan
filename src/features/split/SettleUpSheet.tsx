@@ -78,7 +78,7 @@ export function SettleUpSheet({
         className="absolute inset-0 cursor-default"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
+      <div className="relative z-10 flex flex-col w-full max-w-md max-h-[90vh] overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
@@ -95,7 +95,7 @@ export function SettleUpSheet({
             <X className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
-        <div className="max-h-[50vh] overflow-y-auto px-8 py-6 space-y-4">
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
           {settlements.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-500 mb-4" />

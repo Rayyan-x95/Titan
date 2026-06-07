@@ -197,7 +197,7 @@ export function ExpenseForm({
         onSubmit={(event) => {
           void handleSubmit(event);
         }}
-        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
+        className="relative z-10 flex flex-col w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
       >
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-5 py-4 sm:px-8 sm:py-6">
           <div className="flex items-center gap-6">
@@ -255,7 +255,7 @@ export function ExpenseForm({
           </div>
         </div>
 
-        <div className="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto px-5 py-4 sm:px-8 sm:py-6">
+        <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-8 sm:py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <label className="block space-y-2">

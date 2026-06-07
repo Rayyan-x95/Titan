@@ -51,7 +51,7 @@ export function AddFriendSheet({ open, onOpenChange }: AddFriendSheetProps) {
         onSubmit={(e) => {
           void handleSave(e);
         }}
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
+        className="relative z-10 flex flex-col w-full max-w-md max-h-[90vh] overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
       >
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div>
@@ -69,7 +69,7 @@ export function AddFriendSheet({ open, onOpenChange }: AddFriendSheetProps) {
             <X className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
-        <div className="px-8 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
           <label className="block space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
               Friend's Name
