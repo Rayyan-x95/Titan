@@ -12,6 +12,8 @@ import type {
   OnboardingProfile,
   SharedExpense,
   Task,
+  SyncTombstone,
+  FocusSession,
 } from './types';
 
 function createTable<T>(getKey: (value: T) => string = (value) => (value as { id: string }).id) {
@@ -69,6 +71,8 @@ const tables = vi.hoisted(() => ({
   groupsTable: createTable<Group>(),
   sharedExpensesTable: createTable<SharedExpense>(),
   dailySnapshotsTable: createTable<DailySnapshot>((snapshot) => snapshot.date),
+  syncTombstonesTable: createTable<SyncTombstone>(),
+  focusSessionsTable: createTable<FocusSession>(),
 }));
 
 vi.mock('@/core/db/db', () => ({
@@ -83,6 +87,8 @@ vi.mock('@/core/db/db', () => ({
     groups: tables.groupsTable,
     sharedExpenses: tables.sharedExpensesTable,
     dailySnapshots: tables.dailySnapshotsTable,
+    syncTombstones: tables.syncTombstonesTable,
+    focusSessions: tables.focusSessionsTable,
     tables: [
       tables.tasksTable,
       tables.notesTable,
@@ -94,6 +100,8 @@ vi.mock('@/core/db/db', () => ({
       tables.groupsTable,
       tables.sharedExpensesTable,
       tables.dailySnapshotsTable,
+      tables.syncTombstonesTable,
+      tables.focusSessionsTable,
     ],
     transaction: async (_mode: string, ...args: unknown[]) => {
       const callback = args[args.length - 1] as () => Promise<void>;
@@ -115,6 +123,8 @@ beforeEach(async () => {
   await tables.groupsTable.clear();
   await tables.sharedExpensesTable.clear();
   await tables.dailySnapshotsTable.clear();
+  await tables.syncTombstonesTable.clear();
+  await tables.focusSessionsTable.clear();
 
   const createdAt = new Date().toISOString();
   const cashAccount: Account = { id: 'cash', name: 'Cash', balance: 0, createdAt };
@@ -130,6 +140,7 @@ beforeEach(async () => {
     groups: [],
     sharedExpenses: [],
     dailySnapshots: [],
+    focusSessions: [],
     hydrated: true,
   });
   await tables.accountsTable.put(cashAccount);
@@ -266,5 +277,78 @@ describe('core store stabilization behavior', () => {
         participants: [{ id: friend.id, amount: 900 }],
       }),
     ).rejects.toThrow(/sum to total amount/);
+  });
+
+  it('clears taskId from focus sessions and updates updatedAt on task deletion', async () => {
+    const task = await useStore.getState().addTask({ title: 'Pomodoro task', status: 'todo' });
+    const session = await useStore.getState().addFocusSession({
+      taskId: task.id,
+      durationSeconds: 1500,
+    });
+    expect(useStore.getState().focusSessions[0]?.taskId).toBe(task.id);
+
+    await useStore.getState().deleteTask(task.id);
+    const updatedSession = useStore.getState().focusSessions.find((s) => s.id === session.id);
+    expect(updatedSession?.taskId).toBeUndefined();
+    expect(updatedSession?.updatedAt).toBeDefined();
+  });
+
+  it('sets updatedAt on account add and update', async () => {
+    const account = await useStore.getState().addAccount({
+      name: 'Secondary Bank',
+      balanceDollars: 50,
+    });
+    expect(account.updatedAt).toBeDefined();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const updated = await useStore.getState().updateAccount(account.id, { name: 'Savings' });
+    expect(updated?.updatedAt).toBeDefined();
+    expect(updated?.updatedAt).not.toEqual(account.updatedAt);
+  });
+
+  it('adjusts totalAmount on friend deletion split recalculation', async () => {
+    const friend = await useStore.getState().addFriend({ name: 'Bob' });
+    const expense = await useStore.getState().addSharedExpense({
+      totalAmount: 3000,
+      description: 'Lunch split',
+      paidBy: 'user',
+      participants: [
+        { id: 'user', amount: 1500 },
+        { id: friend.id, amount: 1500 },
+      ],
+    });
+
+    await useStore.getState().deleteFriend(friend.id);
+    const updatedExpense = useStore.getState().sharedExpenses.find((se) => se.id === expense.id);
+    expect(updatedExpense?.participants).toHaveLength(1);
+    expect(updatedExpense?.totalAmount).toBe(1500);
+  });
+});
+
+describe('settings PIN salt resolving', () => {
+  it('should resolve custom environment salts correctly', async () => {
+    const { hashPin } = await import('../settings');
+    const meta = import.meta as unknown as { env?: Record<string, unknown> };
+    if (!meta.env) meta.env = {};
+    const originalPinSalt = meta.env.VITE_PIN_SALT;
+    const originalSalt = meta.env.VITE_SALT;
+
+    // Custom VITE_PIN_SALT
+    meta.env.VITE_PIN_SALT = 'custom-pin-salt-test-value';
+    const hash1 = await hashPin('1234');
+    expect(hash1).toBeDefined();
+
+    // Custom VITE_SALT
+    delete meta.env.VITE_PIN_SALT;
+    meta.env.VITE_SALT = 'custom-salt-test-value';
+    const hash2 = await hashPin('1234');
+    expect(hash2).toBeDefined();
+
+    // Clean up
+    if (originalPinSalt === undefined) delete meta.env.VITE_PIN_SALT;
+    else meta.env.VITE_PIN_SALT = originalPinSalt;
+    if (originalSalt === undefined) delete meta.env.VITE_SALT;
+    else meta.env.VITE_SALT = originalSalt;
   });
 });

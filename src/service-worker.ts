@@ -104,13 +104,16 @@ registerRoute(
   ({ url }) =>
     url.origin === 'https://unpkg.com' ||
     url.origin === 'https://cdn.jsdelivr.net' ||
+    url.origin === 'https://huggingface.co' ||
     url.pathname.includes('tesseract') ||
-    url.pathname.includes('pdf.worker'),
+    url.pathname.includes('pdf.worker') ||
+    url.pathname.includes('onnx') ||
+    url.pathname.includes('wasm'),
   new CacheFirst({
     cacheName: 'titan-third-party-assets',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 30,
+        maxEntries: 60,
         maxAgeSeconds: 60 * 60 * 24 * 90, // 90 days - worker scripts and language data are heavy and immutable
         purgeOnQuotaError: true,
       }),

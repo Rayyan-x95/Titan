@@ -20,11 +20,13 @@ export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSli
   accounts: [],
 
   addAccount: async (input) => {
+    const time = new Date().toISOString();
     const account: Account = {
       id: input.id ?? createId(),
       name: sanitizeString(input.name || 'Account', 100),
       balance: dollarsToCentsSafe(input.balanceDollars),
-      createdAt: new Date().toISOString(),
+      createdAt: time,
+      updatedAt: time,
     };
     await db.accounts.put(account);
     set((state) => ({ accounts: upsertItem(state.accounts, account) }));
@@ -38,7 +40,7 @@ export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSli
     if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
       sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
     }
-    const next = { ...current, ...sanitizedUpdates };
+    const next = { ...current, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
     await db.accounts.put(next);
     set((state) => ({ accounts: upsertItem(state.accounts, next) }));
     return next;
@@ -56,20 +58,33 @@ export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSli
     const fallbackAccount = currentState.accounts.find((a) => a.id !== id);
     if (!fallbackAccount) throw new Error('No fallback account available.');
 
+    const now = new Date().toISOString();
     const reassignedExpenses = currentState.expenses.map((expense) =>
-      expense.accountId === id ? { ...expense, accountId: fallbackAccount.id } : expense,
+      expense.accountId === id
+        ? { ...expense, accountId: fallbackAccount.id, updatedAt: now }
+        : expense,
     );
 
     const updatedFallbackAccount = {
       ...fallbackAccount,
       balance: fallbackAccount.balance + account.balance,
+      updatedAt: now,
     };
 
-    await db.transaction('rw', [db.accounts, db.expenses], async () => {
+    await db.transaction('rw', [db.accounts, db.expenses, db.syncTombstones], async () => {
       await db.accounts.delete(id);
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'accounts',
+        deletedAt: now,
+      });
       await db.accounts.put(updatedFallbackAccount);
       if (reassignedExpenses.length > 0) {
-        await db.expenses.where('accountId').equals(id).modify({ accountId: fallbackAccount.id });
+        await db.expenses
+          .where('accountId')
+          .equals(id)
+          .modify({ accountId: fallbackAccount.id, updatedAt: now });
       }
     });
 

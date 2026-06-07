@@ -13,12 +13,22 @@ export function PwaBanner() {
   const updateController = useMemo(() => createPwaUpdateController(), []);
 
   useEffect(() => {
-    return updateController.subscribe((available) => {
-      setUpdateAvailable(available);
-      if (!available) {
-        setDismissedUpdate((prev) => (prev !== false ? false : prev));
-      }
+    let isMounted = true;
+    const unsubscribe = updateController.subscribe((available) => {
+      // Defer state updates asynchronously to prevent render-phase loop cascades
+      setTimeout(() => {
+        if (!isMounted) return;
+        setUpdateAvailable(available);
+        if (!available) {
+          setDismissedUpdate((prev) => (prev !== false ? false : prev));
+        }
+      }, 0);
     });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [setUpdateAvailable, updateController]);
 
   const showOffline = !isOnline;

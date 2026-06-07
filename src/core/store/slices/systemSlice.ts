@@ -20,6 +20,7 @@ import {
   normalizeImportedOnboarding,
   createId,
 } from '../utils';
+import type { SyncPayload } from '@/lib/core/syncEngine';
 
 export interface SystemLog {
   id: string;
@@ -43,6 +44,7 @@ export interface SystemSlice {
   hydrate: () => Promise<void>;
   clearAll: () => Promise<void>;
   importBackup: (payload: unknown) => Promise<void>;
+  importSyncData: (remote: SyncPayload) => Promise<void>;
   updateSnapshot: (
     date: string,
     type: 'task' | 'expense' | 'note' | 'split',
@@ -77,6 +79,7 @@ async function hydrateFromDatabase() {
     sharedExpenses,
     dailySnapshots,
     onboarding,
+    focusSessions,
   ] = await Promise.all([
     db.tasks.toArray(),
     db.notes.toArray(),
@@ -88,6 +91,7 @@ async function hydrateFromDatabase() {
     db.sharedExpenses.toArray(),
     db.dailySnapshots.toArray(),
     db.onboarding.get('primary'),
+    db.focusSessions.toArray(),
   ]);
 
   const clean = reconcileIntegrity(tasks, notes, expenses, sharedExpenses, groups, friends);
@@ -97,6 +101,7 @@ async function hydrateFromDatabase() {
     accounts,
     dailySnapshots,
     onboarding: onboarding ?? createDefaultOnboardingProfile(),
+    focusSessions,
   };
 }
 
@@ -127,8 +132,17 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     const startTime = performance.now();
     try {
       const data = await hydrateFromDatabase();
-      const { tasks, notes, budgets, friends, groups, sharedExpenses, dailySnapshots, onboarding } =
-        data;
+      const {
+        tasks,
+        notes,
+        budgets,
+        friends,
+        groups,
+        sharedExpenses,
+        dailySnapshots,
+        onboarding,
+        focusSessions,
+      } = data;
       let { accounts, expenses } = data;
 
       if (accounts.length === 0) {
@@ -143,20 +157,25 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
         if (upiAccount) {
           const bankAccount = accounts.find((a) => a.id === 'bank');
           if (bankAccount) {
+            const now = new Date().toISOString();
             const updatedBank = {
               ...bankAccount,
               balance: bankAccount.balance + upiAccount.balance,
+              updatedAt: now,
             };
             await db.transaction('rw', [db.accounts, db.expenses], async () => {
               await db.accounts.delete('upi');
               await db.accounts.put(updatedBank);
-              await db.expenses.where('accountId').equals('upi').modify({ accountId: 'bank' });
+              await db.expenses
+                .where('accountId')
+                .equals('upi')
+                .modify({ accountId: 'bank', updatedAt: now });
             });
             accounts = accounts
               .filter((a) => a.id !== 'upi')
               .map((a) => (a.id === 'bank' ? updatedBank : a));
             expenses = expenses.map((e) =>
-              e.accountId === 'upi' ? { ...e, accountId: 'bank' } : e,
+              e.accountId === 'upi' ? { ...e, accountId: 'bank', updatedAt: now } : e,
             );
           }
         }
@@ -174,6 +193,7 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
         sharedExpenses,
         dailySnapshots,
         onboarding,
+        focusSessions,
         hydrated: true,
         metrics: {
           ...get().metrics,
@@ -181,6 +201,18 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
           dbStatus: 'online',
         },
       });
+
+      // Opportunistically run semantic search vector sync in the background without blocking the UI thread
+      setTimeout(() => {
+        import('@/lib/core/semanticEngine')
+          .then((m) => {
+            void m.syncEmbeddings(tasks, notes);
+          })
+          .catch(() => {
+            // Semantic engine is optional; fail silently
+          });
+      }, 3000); // 3 seconds idle buffer
+
       get().addLog(
         'info',
         'System',
@@ -221,6 +253,7 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
       sharedExpenses: [],
       dailySnapshots: [],
       onboarding: defaultOnboarding,
+      focusSessions: [],
     });
     get().addLog('warn', 'System', 'All local data cleared and reset to defaults');
   },
@@ -337,6 +370,123 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     });
   },
 
+  importSyncData: async (remote) => {
+    const [
+      tasks,
+      notes,
+      expenses,
+      budgets,
+      accounts,
+      friends,
+      groups,
+      sharedExpenses,
+      focusSessions,
+      tombstones,
+    ] = await Promise.all([
+      db.tasks.toArray(),
+      db.notes.toArray(),
+      db.expenses.toArray(),
+      db.budgets.toArray(),
+      db.accounts.toArray(),
+      db.friends.toArray(),
+      db.groups.toArray(),
+      db.sharedExpenses.toArray(),
+      db.focusSessions.toArray(),
+      db.syncTombstones.toArray(),
+    ]);
+
+    const localPayload: SyncPayload = {
+      tasks,
+      notes,
+      expenses,
+      budgets,
+      accounts,
+      friends,
+      groups,
+      sharedExpenses,
+      focusSessions,
+      tombstones,
+    };
+
+    const { resolveSyncMerge } = await import('@/lib/core/syncEngine');
+    const resolution = resolveSyncMerge(localPayload, remote);
+
+    await db.transaction('rw', db.tables, async () => {
+      // Put incoming updates
+      if (resolution.tasks.put.length > 0) await db.tasks.bulkPut(resolution.tasks.put);
+      if (resolution.notes.put.length > 0) await db.notes.bulkPut(resolution.notes.put);
+      if (resolution.expenses.put.length > 0) await db.expenses.bulkPut(resolution.expenses.put);
+      if (resolution.budgets.put.length > 0) await db.budgets.bulkPut(resolution.budgets.put);
+      if (resolution.accounts.put.length > 0) await db.accounts.bulkPut(resolution.accounts.put);
+      if (resolution.friends.put.length > 0) await db.friends.bulkPut(resolution.friends.put);
+      if (resolution.groups.put.length > 0) await db.groups.bulkPut(resolution.groups.put);
+      if (resolution.sharedExpenses.put.length > 0)
+        await db.sharedExpenses.bulkPut(resolution.sharedExpenses.put);
+      if (resolution.focusSessions.put.length > 0)
+        await db.focusSessions.bulkPut(resolution.focusSessions.put);
+      if (resolution.tombstones.put.length > 0)
+        await db.syncTombstones.bulkPut(resolution.tombstones.put);
+
+      // Apply incoming deletes
+      if (resolution.tasks.deleteIds.length > 0)
+        await db.tasks.bulkDelete(resolution.tasks.deleteIds);
+      if (resolution.notes.deleteIds.length > 0)
+        await db.notes.bulkDelete(resolution.notes.deleteIds);
+      if (resolution.expenses.deleteIds.length > 0)
+        await db.expenses.bulkDelete(resolution.expenses.deleteIds);
+      if (resolution.budgets.deleteIds.length > 0)
+        await db.budgets.bulkDelete(resolution.budgets.deleteIds);
+      if (resolution.accounts.deleteIds.length > 0)
+        await db.accounts.bulkDelete(resolution.accounts.deleteIds);
+      if (resolution.friends.deleteIds.length > 0)
+        await db.friends.bulkDelete(resolution.friends.deleteIds);
+      if (resolution.groups.deleteIds.length > 0)
+        await db.groups.bulkDelete(resolution.groups.deleteIds);
+      if (resolution.sharedExpenses.deleteIds.length > 0)
+        await db.sharedExpenses.bulkDelete(resolution.sharedExpenses.deleteIds);
+      if (resolution.focusSessions.deleteIds.length > 0)
+        await db.focusSessions.bulkDelete(resolution.focusSessions.deleteIds);
+      if (resolution.tombstones.deleteIds.length > 0)
+        await db.syncTombstones.bulkDelete(resolution.tombstones.deleteIds);
+    });
+
+    const data = await hydrateFromDatabase();
+
+    const nextDailySnapshots = computeDailySnapshots(
+      data.tasks,
+      data.notes,
+      data.expenses,
+      data.sharedExpenses,
+    );
+    await db.dailySnapshots.clear();
+    await db.dailySnapshots.bulkPut(nextDailySnapshots);
+
+    set({
+      tasks: data.tasks,
+      notes: data.notes,
+      expenses: data.expenses,
+      budgets: data.budgets,
+      accounts: data.accounts.length > 0 ? data.accounts : get().accounts,
+      friends: data.friends,
+      groups: data.groups,
+      sharedExpenses: data.sharedExpenses,
+      focusSessions: data.focusSessions,
+      dailySnapshots: nextDailySnapshots,
+    });
+
+    setTimeout(() => {
+      import('@/lib/core/semanticEngine')
+        .then((m) => {
+          void m.syncEmbeddings(data.tasks, data.notes);
+        })
+        .catch(() => {
+          // Semantic engine is optional; fail silently
+        });
+    }, 1000);
+
+    get().addLog('info', 'Sync', 'Zero-knowledge database delta sync completed successfully');
+  },
+
   updateSnapshot: async (date, type, value = 1) => {
     const snapshots = [...get().dailySnapshots];
     const index = snapshots.findIndex((s) => s.date === date);
@@ -391,26 +541,87 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
       get().friends,
     );
 
-    const expenses = canonicalizeCategories(clean.expenses).map((expense) => ({
+    const rawExpenses = canonicalizeCategories(clean.expenses).map((expense) => ({
       ...expense,
       recurrenceRule: normalizeExpenseRecurrenceRule(expense.recurrenceRule),
     }));
-    const budgets = canonicalizeCategories(get().budgets);
-    const dailySnapshots = computeDailySnapshots(
-      clean.tasks,
-      clean.notes,
-      expenses,
-      clean.sharedExpenses,
-    );
+    const rawBudgets = canonicalizeCategories(get().budgets);
+
+    const time = new Date().toISOString();
+
+    const originalTasks = get().tasks;
+    const tasks = clean.tasks.map((task) => {
+      const original = originalTasks.find((t) => t.id === task.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(task)) {
+        return { ...task, updatedAt: time };
+      }
+      return task;
+    });
+
+    const originalNotes = get().notes;
+    const notes = clean.notes.map((note) => {
+      const original = originalNotes.find((n) => n.id === note.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(note)) {
+        return { ...note, updatedAt: time };
+      }
+      return note;
+    });
+
+    const originalExpenses = get().expenses;
+    const resolvedExpenses = rawExpenses.map((expense) => {
+      const original = originalExpenses.find((e) => e.id === expense.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(expense)) {
+        return { ...expense, updatedAt: time };
+      }
+      return expense;
+    });
+
+    const originalSharedExpenses = get().sharedExpenses;
+    const sharedExpenses = clean.sharedExpenses.map((se) => {
+      const original = originalSharedExpenses.find((s) => s.id === se.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(se)) {
+        return { ...se, updatedAt: time };
+      }
+      return se;
+    });
+
+    const originalGroups = get().groups;
+    const groups = clean.groups.map((g) => {
+      const original = originalGroups.find((og) => og.id === g.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(g)) {
+        return { ...g, updatedAt: time };
+      }
+      return g;
+    });
+
+    const originalFriends = get().friends;
+    const friends = clean.friends.map((f) => {
+      const original = originalFriends.find((of) => of.id === f.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(f)) {
+        return { ...f, updatedAt: time };
+      }
+      return f;
+    });
+
+    const originalBudgets = get().budgets;
+    const resolvedBudgets = rawBudgets.map((b) => {
+      const original = originalBudgets.find((ob) => ob.id === b.id);
+      if (original && JSON.stringify(original) !== JSON.stringify(b)) {
+        return { ...b, updatedAt: time };
+      }
+      return b;
+    });
+
+    const dailySnapshots = computeDailySnapshots(tasks, notes, resolvedExpenses, sharedExpenses);
 
     await db.transaction('rw', db.tables, async () => {
-      await db.tasks.bulkPut(clean.tasks);
-      await db.notes.bulkPut(clean.notes);
-      await db.expenses.bulkPut(expenses);
-      await db.sharedExpenses.bulkPut(clean.sharedExpenses);
-      await db.groups.bulkPut(clean.groups);
-      await db.friends.bulkPut(clean.friends);
-      await db.budgets.bulkPut(budgets);
+      await db.tasks.bulkPut(tasks);
+      await db.notes.bulkPut(notes);
+      await db.expenses.bulkPut(resolvedExpenses);
+      await db.sharedExpenses.bulkPut(sharedExpenses);
+      await db.groups.bulkPut(groups);
+      await db.friends.bulkPut(friends);
+      await db.budgets.bulkPut(resolvedBudgets);
       await db.accounts.bulkPut(get().accounts);
       await db.dailySnapshots.clear();
       await db.dailySnapshots.bulkPut(dailySnapshots);
@@ -418,13 +629,13 @@ export const createSystemSlice: StateCreator<CoreStoreState, [], [], SystemSlice
     });
 
     set({
-      tasks: clean.tasks,
-      notes: clean.notes,
-      expenses,
-      sharedExpenses: clean.sharedExpenses,
-      groups: clean.groups,
-      friends: clean.friends,
-      budgets,
+      tasks,
+      notes,
+      expenses: resolvedExpenses,
+      sharedExpenses,
+      groups,
+      friends,
+      budgets: resolvedBudgets,
       dailySnapshots,
     });
 

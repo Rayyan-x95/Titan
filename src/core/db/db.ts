@@ -10,6 +10,9 @@ import type {
   Friend,
   Group,
   SharedExpense,
+  FocusSession,
+  Embedding,
+  SyncTombstone,
 } from '@/core/store/types';
 
 class TitanDatabase extends Dexie {
@@ -23,6 +26,9 @@ class TitanDatabase extends Dexie {
   groups!: Table<Group, string>;
   sharedExpenses!: Table<SharedExpense, string>;
   dailySnapshots!: Table<DailySnapshot, string>;
+  focusSessions!: Table<FocusSession, string>;
+  embeddings!: Table<Embedding, string>;
+  syncTombstones!: Table<SyncTombstone, string>;
 
   constructor() {
     super('titan');
@@ -50,6 +56,51 @@ class TitanDatabase extends Dexie {
       dailySnapshots: 'date',
     });
 
+    this.version(4).stores({
+      tasks: 'id, status, createdAt, dueDate, noteId',
+      notes: 'id, createdAt',
+      expenses: 'id, category, createdAt, linkedTaskId, accountId, type',
+      budgets: 'id, category, period',
+      accounts: 'id, name, createdAt',
+      onboarding: 'id',
+      friends: 'id, name, phoneNumber, createdAt',
+      groups: 'id, name, createdAt',
+      sharedExpenses: 'id, groupId, paidBy, createdAt',
+      dailySnapshots: 'date',
+      focusSessions: 'id, taskId, startTime',
+    });
+
+    this.version(5).stores({
+      tasks: 'id, status, createdAt, dueDate, noteId',
+      notes: 'id, createdAt',
+      expenses: 'id, category, createdAt, linkedTaskId, accountId, type',
+      budgets: 'id, category, period',
+      accounts: 'id, name, createdAt',
+      onboarding: 'id',
+      friends: 'id, name, phoneNumber, createdAt',
+      groups: 'id, name, createdAt',
+      sharedExpenses: 'id, groupId, paidBy, createdAt',
+      dailySnapshots: 'date',
+      focusSessions: 'id, taskId, startTime',
+      embeddings: 'id, entityId, type',
+    });
+
+    this.version(6).stores({
+      tasks: 'id, status, createdAt, dueDate, noteId',
+      notes: 'id, createdAt',
+      expenses: 'id, category, createdAt, linkedTaskId, accountId, type',
+      budgets: 'id, category, period',
+      accounts: 'id, name, createdAt',
+      onboarding: 'id',
+      friends: 'id, name, phoneNumber, createdAt',
+      groups: 'id, name, createdAt',
+      sharedExpenses: 'id, groupId, paidBy, createdAt',
+      dailySnapshots: 'date',
+      focusSessions: 'id, taskId, startTime',
+      embeddings: 'id, entityId, type',
+      syncTombstones: 'id, entityId, deletedAt',
+    });
+
     this.tasks = this.table('tasks');
     this.notes = this.table('notes');
     this.expenses = this.table('expenses');
@@ -60,6 +111,9 @@ class TitanDatabase extends Dexie {
     this.groups = this.table('groups');
     this.sharedExpenses = this.table('sharedExpenses');
     this.dailySnapshots = this.table('dailySnapshots');
+    this.focusSessions = this.table('focusSessions');
+    this.embeddings = this.table('embeddings');
+    this.syncTombstones = this.table('syncTombstones');
   }
 }
 

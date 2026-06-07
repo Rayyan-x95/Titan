@@ -25,7 +25,20 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     const errors = validateNoteReferences(note, get().notes);
     if (errors.length > 0) throw new Error(errors.join('; '));
 
-    const updatedNotes = syncNoteNoteReferences(note, get().notes);
+    const time = new Date().toISOString();
+    const updatedNotes = syncNoteNoteReferences(note, get().notes).map((n) => {
+      if (n.id === note.id) {
+        return { ...n, updatedAt: time };
+      }
+      const original = get().notes.find((on) => on.id === n.id);
+      const changed =
+        !original || JSON.stringify(original.linkedNoteIds) !== JSON.stringify(n.linkedNoteIds);
+      if (changed) {
+        return { ...n, updatedAt: time };
+      }
+      return n;
+    });
+
     const persistedNote = updatedNotes.find((n) => n.id === note.id) ?? note;
 
     await db.transaction('rw', [db.notes], async () => {
@@ -49,7 +62,7 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     const today = toLocalDateString(new Date());
     await get().updateSnapshot(today, 'note', 1);
 
-    return note;
+    return persistedNote;
   },
 
   updateNote: async (id, updates) => {
@@ -62,11 +75,25 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     const errors = validateNoteReferences(note, get().notes);
     if (errors.length > 0) throw new Error(errors.join('; '));
 
-    const updatedNotes = syncNoteNoteReferences(note, get().notes);
+    const time = new Date().toISOString();
+    const updatedNotes = syncNoteNoteReferences(note, get().notes).map((n) => {
+      if (n.id === note.id) {
+        return { ...n, updatedAt: time };
+      }
+      const original = get().notes.find((on) => on.id === n.id);
+      const changed =
+        !original || JSON.stringify(original.linkedNoteIds) !== JSON.stringify(n.linkedNoteIds);
+      if (changed) {
+        return { ...n, updatedAt: time };
+      }
+      return n;
+    });
+
+    const persistedNote = updatedNotes.find((n) => n.id === note.id) ?? note;
 
     await db.transaction('rw', [db.notes], async () => {
       // Update the primary note
-      await db.notes.put(note);
+      await db.notes.put(persistedNote);
       // Update any notes that had their backlinks changed
       const touchedNotes = updatedNotes.filter(
         (n) =>
@@ -82,30 +109,50 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
       notes: updatedNotes,
     }));
 
-    return note;
+    return persistedNote;
   },
 
   deleteNote: async (id) => {
-    const tasks = clearTasksForDeletedNote(id, get().tasks);
+    const time = new Date().toISOString();
+    const tasks = clearTasksForDeletedNote(id, get().tasks).map((t) => {
+      const original = get().tasks.find((ot) => ot.id === t.id);
+      if (original && original.noteId === id && t.noteId === undefined) {
+        return { ...t, updatedAt: time };
+      }
+      return t;
+    });
     const affectedTaskIds = get()
       .tasks.filter((t) => t.noteId === id)
       .map((t) => t.id);
 
     // Clear linkedNoteId from any expenses that reference this note
     const expenses = get().expenses.map((e) =>
-      e.linkedNoteId === id ? { ...e, linkedNoteId: undefined } : e,
+      e.linkedNoteId === id ? { ...e, linkedNoteId: undefined, updatedAt: time } : e,
     );
 
     // Clear linkedNoteIds from other notes that reference this note
     const notes = get()
       .notes.filter((n) => n.id !== id)
-      .map((n) => ({
-        ...n,
-        linkedNoteIds: (n.linkedNoteIds ?? []).filter((nid) => nid !== id),
-      }));
+      .map((n) => {
+        const hasLink = (n.linkedNoteIds ?? []).includes(id);
+        if (hasLink) {
+          return {
+            ...n,
+            linkedNoteIds: (n.linkedNoteIds ?? []).filter((nid) => nid !== id),
+            updatedAt: time,
+          };
+        }
+        return n;
+      });
 
-    await db.transaction('rw', [db.notes, db.tasks, db.expenses], async () => {
+    await db.transaction('rw', [db.notes, db.tasks, db.expenses, db.syncTombstones], async () => {
       await db.notes.delete(id);
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'notes',
+        deletedAt: time,
+      });
       if (affectedTaskIds.length > 0) {
         await db.tasks.bulkPut(tasks.filter((t) => affectedTaskIds.includes(t.id)));
       }

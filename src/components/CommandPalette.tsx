@@ -42,6 +42,61 @@ export function CommandPalette() {
     setSelectedIndex(0);
   }, []);
 
+  const [semanticResults, setSemanticResults] = useState<CommandPaletteItem[]>([]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setSemanticResults((prev) => (prev.length > 0 ? [] : prev));
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(() => {
+      import('@/lib/core/semanticEngine')
+        .then(async (m) => {
+          const semRes = await m.semanticSearch(query, 3);
+          const list: CommandPaletteItem[] = [];
+
+          semRes.forEach((r) => {
+            if (r.type === 'task') {
+              const task = tasks.find((t) => t.id === r.entityId);
+              if (task) {
+                list.push({
+                  id: `semantic-task-${task.id}`,
+                  title: task.title,
+                  icon: Sparkles,
+                  action: () => {
+                    void navigate('/tasks');
+                  },
+                  type: 'task',
+                  subtitle: `AI Semantic Match (${Math.round(r.score * 100)}%) • ${task.status}`,
+                });
+              }
+            } else {
+              const note = notes.find((n) => n.id === r.entityId);
+              if (note) {
+                list.push({
+                  id: `semantic-note-${note.id}`,
+                  title: note.content.split('\n')[0] || 'Untitled Note',
+                  icon: Sparkles,
+                  action: () => {
+                    void navigate('/notes');
+                  },
+                  type: 'note',
+                  subtitle: `AI Semantic Match (${Math.round(r.score * 100)}%)`,
+                });
+              }
+            }
+          });
+          setSemanticResults(list);
+        })
+        .catch((_err) => {
+          // Semantic search is optional; fail silently
+        });
+    }, 250); // 250ms debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, tasks, notes, navigate]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -92,7 +147,7 @@ export function CommandPalette() {
           title: 'Go to Intelligence',
           icon: Sparkles,
           action: () => {
-            void navigate('/settings?tab=intelligence');
+            void navigate('/intelligence');
           },
           type: 'action' as const,
         },
@@ -176,8 +231,20 @@ export function CommandPalette() {
     return list;
   }, [query, tasks, notes, expenses, currency, navigate]);
 
+  const combinedResults = useMemo<CommandPaletteItem[]>(() => {
+    const standard = results;
+    const standardEntityIds = new Set(
+      standard.map((item) => item.id.replace(/^(task-|note-|finance-)/, '')),
+    );
+    const filteredSemantic = semanticResults.filter((item) => {
+      const entityId = item.id.replace('semantic-task-', '').replace('semantic-note-', '');
+      return !standardEntityIds.has(entityId);
+    });
+    return [...standard, ...filteredSemantic];
+  }, [results, semanticResults]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (results.length === 0) {
+    if (combinedResults.length === 0) {
       if (e.key === 'Enter') {
         e.preventDefault();
       }
@@ -186,14 +253,14 @@ export function CommandPalette() {
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % results.length);
+      setSelectedIndex((prev) => (prev + 1) % combinedResults.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
+      setSelectedIndex((prev) => (prev - 1 + combinedResults.length) % combinedResults.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (results[selectedIndex]) {
-        results[selectedIndex].action();
+      if (combinedResults[selectedIndex]) {
+        combinedResults[selectedIndex].action();
         close();
       }
     }
@@ -234,13 +301,13 @@ export function CommandPalette() {
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-3">
-          {results.length === 0 ? (
+          {combinedResults.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               No results found for "{query}"
             </div>
           ) : (
             <div className="space-y-1">
-              {results.map((item, idx) => {
+              {combinedResults.map((item, idx) => {
                 const Icon = item.icon;
                 const isSelected = idx === selectedIndex;
                 return (

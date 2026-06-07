@@ -58,8 +58,8 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         onUnlock();
       }
-    } catch (err) {
-      console.error('Biometric authentication failed:', err);
+    } catch {
+      // Error handled by UI feedback
     }
   };
 

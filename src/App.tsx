@@ -17,6 +17,9 @@ const FinancePage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/features/settings').then((m) => ({ default: m.SettingsPage })),
 );
+const IntelligencePage = lazy(() =>
+  import('@/features/intelligence').then((m) => ({ default: m.IntelligencePage })),
+);
 const ShareTargetPage = lazy(() =>
   import('@/features/share').then((m) => ({ default: m.ShareTargetPage })),
 );
@@ -161,10 +164,7 @@ export default function App() {
               <Route path="tasks" element={<TasksPage />} />
               <Route path="notes" element={<NotesPage />} />
               <Route path="finance" element={<FinancePage />} />
-              <Route
-                path="intelligence"
-                element={<Navigate to="/settings?tab=intelligence" replace />}
-              />
+              <Route path="intelligence" element={<IntelligencePage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="share" element={<ShareTargetPage />} />
             </Route>

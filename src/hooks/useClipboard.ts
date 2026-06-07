@@ -10,8 +10,8 @@ export function useClipboard(timeout = 2000) {
         setCopied(true);
         setTimeout(() => setCopied(false), timeout);
         return true;
-      } catch (err) {
-        console.error('Failed to copy to clipboard', err);
+      } catch {
+        // Error handled by UI feedback
         return false;
       }
     },

@@ -19,6 +19,11 @@ export interface InboxDraft {
   note?: string;
   suggestion?: string;
   confidence?: number;
+  dueDate?: string;
+  priority?: 'low' | 'medium' | 'high';
+  area?: 'work' | 'personal' | 'health' | 'finance' | 'social';
+  tags?: string[];
+  accountId?: string;
 }
 
 export interface BriefTaskItem {
@@ -158,58 +163,138 @@ export function parseInboxDraft(input: string): InboxDraft {
   const text = input.trim();
   if (!text) throw new Error('Enter something to capture.');
 
-  const lower = text.toLowerCase();
-  const amountMatch = text.match(/(?:₹|rs\.?|inr|\$)?\s*(\d+(?:\.\d{1,2})?)/i);
-  const amountCents = amountMatch ? Math.round(Number(amountMatch[1]) * 100) : undefined;
+  let cleanText = text;
 
-  if (lower.startsWith('note:') || lower.startsWith('idea:')) {
-    return {
-      kind: 'note',
-      title: text.replace(/^(note|idea):/i, '').trim(),
-      suggestion: 'Save as note',
-      confidence: 0.92,
-    };
+  // 1. Tags: tag:tagname or tags:tag1,tag2
+  const tags: string[] = [];
+  const tagMatches = Array.from(
+    cleanText.matchAll(/\btags?:['"]?([^'"\s,]+(?:,[^'"\s,]+)*)['"]?/gi),
+  );
+  for (const match of tagMatches) {
+    const splitTags = match[1].split(',');
+    splitTags.forEach((t) => {
+      const trimmed = t.trim().toLowerCase();
+      if (trimmed) tags.push(trimmed);
+    });
+  }
+  cleanText = cleanText.replace(/\btags?:['"]?([^'"\s,]+(?:,[^'"\s,]+)*)['"]?/gi, '').trim();
+
+  // 2. Priority: priority:low|medium|high
+  let priority: 'low' | 'medium' | 'high' = 'medium';
+  const priorityMatch = cleanText.match(/\bpriority:(low|medium|high)\b/i);
+  if (priorityMatch) {
+    priority = priorityMatch[1].toLowerCase() as 'low' | 'medium' | 'high';
+    cleanText = cleanText.replace(/\bpriority:(low|medium|high)\b/gi, '').trim();
   }
 
-  if (lower.startsWith('task:') || lower.startsWith('todo:')) {
-    return {
-      kind: 'task',
-      title: text.replace(/^(task|todo):/i, '').trim(),
-      suggestion: 'Create a task',
-      confidence: 0.94,
-    };
+  // 3. Area: area:work|personal|health|finance|social
+  let area: 'work' | 'personal' | 'health' | 'finance' | 'social' | undefined;
+  const areaMatch = cleanText.match(/\barea:(work|personal|health|finance|social)\b/i);
+  if (areaMatch) {
+    area = areaMatch[1].toLowerCase() as 'work' | 'personal' | 'health' | 'finance' | 'social';
+    cleanText = cleanText.replace(/\barea:(work|personal|health|finance|social)\b/gi, '').trim();
   }
 
-  if (
-    lower.startsWith('expense:') ||
-    lower.startsWith('spent ') ||
-    lower.includes(' paid ') ||
-    lower.includes(' bought ') ||
-    amountCents
-  ) {
-    const category =
-      lower.includes('food') || lower.includes('coffee') || lower.includes('lunch')
-        ? 'Food'
-        : lower.includes('uber') || lower.includes('fuel') || lower.includes('taxi')
-          ? 'Transport'
-          : 'General';
+  // 4. Account mapping: account:bank|cash or "on bank|cash"
+  let accountId: string | undefined;
+  const accountMatch = cleanText.match(/\baccount:(bank|cash)\b/i);
+  if (accountMatch) {
+    accountId = accountMatch[1].toLowerCase();
+    cleanText = cleanText.replace(/\baccount:(bank|cash)\b/gi, '').trim();
+  } else {
+    const onAccountMatch = cleanText.match(/\bon\s+(bank|cash)\b/i);
+    if (onAccountMatch) {
+      accountId = onAccountMatch[1].toLowerCase();
+      cleanText = cleanText.replace(/\bon\s+(bank|cash)\b/gi, '').trim();
+    }
+  }
 
-    return {
-      kind: 'expense',
-      title: text,
-      amountCents: amountCents ?? 0,
-      category,
-      note: text,
-      suggestion: `Create an expense under ${category}`,
-      confidence: amountCents ? 0.9 : 0.72,
-    };
+  // 5. Due date: due:YYYY-MM-DD or "by/due tomorrow|today"
+  let dueDate: string | undefined;
+  const dueMatch = cleanText.match(/\bdue:(\d{4}-\d{2}-\d{2})\b/i);
+  if (dueMatch) {
+    dueDate = dueMatch[1];
+    cleanText = cleanText.replace(/\bdue:\d{4}-\d{2}-\d{2}\b/gi, '').trim();
+  } else {
+    const byMatch = cleanText.match(/\b(?:by|due)\s+(tomorrow|today)\b/i);
+    if (byMatch) {
+      const keyword = byMatch[1].toLowerCase();
+      const targetDate = new Date();
+      if (keyword === 'tomorrow') {
+        targetDate.setDate(targetDate.getDate() + 1);
+      }
+      dueDate = targetDate.toISOString().slice(0, 10);
+      cleanText = cleanText.replace(/\b(?:by|due)\s+(tomorrow|today)\b/gi, '').trim();
+    }
+  }
+
+  // Clean double spaces left by replacements
+  cleanText = cleanText.replace(/\s+/g, ' ').trim();
+  const lowerClean = cleanText.toLowerCase();
+
+  // Determine kind of capture
+  let kind: 'task' | 'note' | 'expense' = 'task';
+  let title = cleanText;
+  let amountCents: number | undefined;
+  let category = 'General';
+
+  if (lowerClean.startsWith('note:') || lowerClean.startsWith('idea:')) {
+    kind = 'note';
+    title = cleanText.replace(/^(note|idea):/i, '').trim();
+  } else if (lowerClean.startsWith('task:') || lowerClean.startsWith('todo:')) {
+    kind = 'task';
+    title = cleanText.replace(/^(task|todo):/i, '').trim();
+  } else {
+    // Check if it looks like an expense
+    const amountMatch = cleanText.match(/(?:₹|rs\.?|inr|\$)?\s*(\d+(?:\.\d{1,2})?)/i);
+    const hasExpenseKeywords =
+      lowerClean.startsWith('expense:') ||
+      lowerClean.startsWith('spent ') ||
+      lowerClean.includes(' paid ') ||
+      lowerClean.includes(' bought ');
+
+    if (hasExpenseKeywords || amountMatch) {
+      kind = 'expense';
+      amountCents = amountMatch ? Math.round(Number(amountMatch[1]) * 100) : 0;
+
+      // Determine category based on keywords
+      category =
+        lowerClean.includes('food') || lowerClean.includes('coffee') || lowerClean.includes('lunch')
+          ? 'Food'
+          : lowerClean.includes('uber') ||
+              lowerClean.includes('fuel') ||
+              lowerClean.includes('taxi')
+            ? 'Transport'
+            : 'General';
+
+      // Clean title from "spent <amount>" prefix or amount number
+      title =
+        cleanText
+          .replace(/^(expense|spent):?/i, '')
+          .replace(/(?:₹|rs\.?|inr|\$)?\s*\d+(?:\.\d{1,2})?/i, '')
+          .replace(/\s+/g, ' ')
+          .trim() || 'Expense';
+    }
   }
 
   return {
-    kind: 'task',
-    title: text,
-    suggestion: 'Defaulting to task',
-    confidence: 0.55,
+    kind,
+    title,
+    amountCents,
+    category,
+    note: cleanText,
+    dueDate,
+    priority,
+    area,
+    tags: tags.length > 0 ? tags : undefined,
+    accountId,
+    suggestion:
+      kind === 'expense'
+        ? `Create an expense under ${category}`
+        : kind === 'note'
+          ? 'Save as note'
+          : 'Create a task',
+    confidence: 0.9,
   };
 }
 
@@ -243,9 +328,10 @@ export function buildDailyBrief(input: {
 
   for (const expense of input.expenses) {
     if (expense.type === 'income') continue;
+    const lowerCategory = expense.category.toLowerCase();
     expenseByCategory.set(
-      expense.category,
-      (expenseByCategory.get(expense.category) ?? 0) + expense.amount,
+      lowerCategory,
+      (expenseByCategory.get(lowerCategory) ?? 0) + expense.amount,
     );
   }
 
@@ -271,7 +357,7 @@ export function buildDailyBrief(input: {
       .slice(0, 5),
     budgetAlerts: input.budgets
       .map((budget) => {
-        const spent = expenseByCategory.get(budget.category) ?? 0;
+        const spent = expenseByCategory.get(budget.category.toLowerCase()) ?? 0;
         const percent = budget.limit > 0 ? Math.round((spent / budget.limit) * 100) : 0;
         return { category: budget.category, spent, limit: budget.limit, percent };
       })

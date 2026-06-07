@@ -15,7 +15,7 @@ const items = [
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/finance', label: 'Money', icon: Landmark },
   { to: '/notes', label: 'Thoughts', icon: NotebookPen },
-  { to: '/settings?tab=intelligence', label: 'Intel', icon: Sparkles },
+  { to: '/intelligence', label: 'Intel', icon: Sparkles },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -25,29 +25,19 @@ export function Navigation() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-fit flex-col items-center px-4 pb-[calc(1.5rem+var(--safe-area-bottom))] lg:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-md flex-col items-center px-4 pb-[calc(1.5rem+var(--safe-area-bottom))] lg:hidden"
     >
-      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 backdrop-blur-2xl shadow-2xl relative overflow-hidden ring-1 ring-white/5">
+      <div className="pointer-events-auto flex w-full items-center justify-around rounded-full border border-white/10 bg-black/40 p-1.5 backdrop-blur-2xl shadow-2xl relative overflow-hidden ring-1 ring-white/5">
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
-          const isIntel = item.label === 'Intel';
-          const isSettings = item.label === 'Settings';
-          const isIntelTabActive =
-            location.pathname === '/settings' && location.search.includes('tab=intelligence');
 
           const active =
-            (isIntel && isIntelTabActive) ||
-            (isSettings &&
-              location.pathname === '/settings' &&
-              !location.search.includes('tab=intelligence')) ||
-            (!isIntel &&
-              !isSettings &&
-              (location.pathname === item.to ||
-                (item.to === '/' && location.pathname === '/') ||
-                isMoneyActive));
+            location.pathname === item.to ||
+            (item.to === '/' && location.pathname === '/') ||
+            isMoneyActive;
 
           return (
             <NavLink

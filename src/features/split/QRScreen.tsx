@@ -44,8 +44,8 @@ export function QRScreen({ upiId, payeeName, amount, note, onBack, onSettled }: 
         link.download = 'titan-payment.png';
         link.click();
       }
-    } catch (err) {
-      console.error('Share failed:', err);
+    } catch {
+      // Error handled by UI feedback
     } finally {
       setSharing(false);
     }

@@ -70,13 +70,16 @@ export function Dropdown<T extends string>({
     };
   }, [open]);
 
+  const optionValues = options.map((option) => option.value).join(',');
+
   useEffect(() => {
     const index = Math.max(
       0,
       options.findIndex((option) => option.value === value),
     );
     setActiveIndex(index);
-  }, [options, value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionValues, value]);
 
   useEffect(() => {
     if (!open) {

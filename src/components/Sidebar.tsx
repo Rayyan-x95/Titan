@@ -16,7 +16,7 @@ const items = [
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/finance', label: 'Money', icon: Landmark },
   { to: '/notes', label: 'Thoughts', icon: NotebookPen },
-  { to: '/settings?tab=intelligence', label: 'Intelligence', icon: Sparkles },
+  { to: '/intelligence', label: 'Intelligence', icon: Sparkles },
 ] as const;
 
 export function Sidebar() {
@@ -45,16 +45,10 @@ export function Sidebar() {
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
-          const isIntel = item.label === 'Intelligence';
-          const isIntelTabActive =
-            location.pathname === '/settings' && location.search.includes('tab=intelligence');
-
           const active =
-            (isIntel && isIntelTabActive) ||
-            (!isIntel &&
-              (location.pathname === item.to ||
-                (item.to === '/' && location.pathname === '/') ||
-                isMoneyActive));
+            location.pathname === item.to ||
+            (item.to === '/' && location.pathname === '/') ||
+            isMoneyActive;
 
           return (
             <NavLink

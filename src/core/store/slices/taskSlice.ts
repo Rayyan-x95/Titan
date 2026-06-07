@@ -45,7 +45,18 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     const errors = validateTaskRelationships(task, get().tasks);
     if (errors.length > 0) throw new Error(errors.join(' '));
 
-    const notes = syncTaskNoteReference(task, get().notes, get().tasks);
+    const time = new Date().toISOString();
+    task.updatedAt = time;
+
+    const notes = syncTaskNoteReference(task, get().notes, get().tasks).map((n) => {
+      const original = get().notes.find((on) => on.id === n.id);
+      const changed =
+        !original || JSON.stringify(original.linkedTaskIds) !== JSON.stringify(n.linkedTaskIds);
+      if (changed) {
+        return { ...n, updatedAt: time };
+      }
+      return n;
+    });
     const affectedNoteIds = new Set(notes.filter((n) => n.id === task.noteId).map((n) => n.id));
 
     await db.transaction('rw', [db.tasks, db.notes], async () => {
@@ -74,7 +85,19 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     const errors = validateTaskRelationships(task, get().tasks);
     if (errors.length > 0) throw new Error(errors.join(' '));
 
-    const notes = syncTaskNoteReference(task, get().notes, get().tasks);
+    const time = new Date().toISOString();
+    task.updatedAt = time;
+
+    const notes = syncTaskNoteReference(task, get().notes, get().tasks).map((n) => {
+      const original = get().notes.find((on) => on.id === n.id);
+      const changed =
+        !original || JSON.stringify(original.linkedTaskIds) !== JSON.stringify(n.linkedTaskIds);
+      if (changed) {
+        return { ...n, updatedAt: time };
+      }
+      return n;
+    });
+
     const affectedNoteIds = new Set();
     if (current.noteId !== task.noteId) {
       if (current.noteId) affectedNoteIds.add(current.noteId);
@@ -112,33 +135,59 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     allTaskIdsToDelete.push(id);
     const deleteSet = new Set(allTaskIdsToDelete);
 
+    const time = new Date().toISOString();
     const notes = get().notes.map((note) => {
       const linkedTaskIds = (note.linkedTaskIds || []).filter((tid) => !deleteSet.has(tid));
-      return linkedTaskIds.length !== (note.linkedTaskIds || []).length
-        ? { ...note, linkedTaskIds }
-        : note;
+      const changed = linkedTaskIds.length !== (note.linkedTaskIds || []).length;
+      return changed ? { ...note, linkedTaskIds, updatedAt: time } : note;
     });
 
     const expenses = get().expenses.map((e) =>
-      e.linkedTaskId && deleteSet.has(e.linkedTaskId) ? { ...e, linkedTaskId: undefined } : e,
+      e.linkedTaskId && deleteSet.has(e.linkedTaskId)
+        ? { ...e, linkedTaskId: undefined, updatedAt: time }
+        : e,
+    );
+
+    const focusSessions = get().focusSessions.map((s) =>
+      s.taskId && deleteSet.has(s.taskId) ? { ...s, taskId: undefined, updatedAt: time } : s,
     );
 
     const originalNotesById = new Map(get().notes.map((n) => [n.id, n]));
     const originalExpensesById = new Map(get().expenses.map((e) => [e.id, e]));
+    const originalFocusSessionsById = new Map(get().focusSessions.map((s) => [s.id, s]));
 
-    await db.transaction('rw', [db.tasks, db.notes, db.expenses], async () => {
-      await db.tasks.bulkDelete(allTaskIdsToDelete);
+    await db.transaction(
+      'rw',
+      [db.tasks, db.notes, db.expenses, db.focusSessions, db.syncTombstones],
+      async () => {
+        await db.tasks.bulkDelete(allTaskIdsToDelete);
 
-      const affectedNotes = notes.filter((n) => n !== originalNotesById.get(n.id));
-      if (affectedNotes.length > 0) {
-        await db.notes.bulkPut(affectedNotes);
-      }
+        const tombstones = allTaskIdsToDelete.map((taskId) => ({
+          id: crypto.randomUUID(),
+          entityId: taskId,
+          entityType: 'tasks',
+          deletedAt: time,
+        }));
+        await db.syncTombstones.bulkPut(tombstones);
 
-      const affectedExpenses = expenses.filter((e) => e !== originalExpensesById.get(e.id));
-      if (affectedExpenses.length > 0) {
-        await db.expenses.bulkPut(affectedExpenses);
-      }
-    });
+        const affectedNotes = notes.filter((n) => n !== originalNotesById.get(n.id));
+        if (affectedNotes.length > 0) {
+          await db.notes.bulkPut(affectedNotes);
+        }
+
+        const affectedExpenses = expenses.filter((e) => e !== originalExpensesById.get(e.id));
+        if (affectedExpenses.length > 0) {
+          await db.expenses.bulkPut(affectedExpenses);
+        }
+
+        const affectedFocusSessions = focusSessions.filter(
+          (s) => s !== originalFocusSessionsById.get(s.id),
+        );
+        if (affectedFocusSessions.length > 0) {
+          await db.focusSessions.bulkPut(affectedFocusSessions);
+        }
+      },
+    );
 
     // Update snapshot if the deleted task (or its subtasks) were done
     const tasksToDelete = get().tasks.filter((t) => deleteSet.has(t.id));
@@ -148,6 +197,7 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
       tasks: state.tasks.filter((t) => !deleteSet.has(t.id)),
       notes,
       expenses,
+      focusSessions,
     }));
 
     if (doneTasksCount > 0) {

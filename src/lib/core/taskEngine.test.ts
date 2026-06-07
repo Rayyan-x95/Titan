@@ -84,4 +84,70 @@ describe('taskEngine', () => {
     const result = getTodayTasks(tasks, new Date('2024-03-01T08:00:00.000Z'));
     expect(result.map((task) => task.id)).toEqual(['today']);
   });
+
+  it('detects hierarchy too deep including subtree depth', () => {
+    const tasks = [
+      {
+        id: 'p1',
+        title: 'P1',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        createdAt: 'x',
+      },
+      {
+        id: 'p2',
+        title: 'P2',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        parentTaskId: 'p1',
+        createdAt: 'x',
+      },
+      {
+        id: 'p3',
+        title: 'P3',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        parentTaskId: 'p2',
+        createdAt: 'x',
+      },
+      {
+        id: 'p4',
+        title: 'P4',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        parentTaskId: 'p3',
+        createdAt: 'x',
+      },
+      { id: 'a', title: 'A', status: 'todo' as const, priority: 'medium' as const, createdAt: 'x' },
+      {
+        id: 'b',
+        title: 'B',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        parentTaskId: 'a',
+        createdAt: 'x',
+      },
+      {
+        id: 'c',
+        title: 'C',
+        status: 'todo' as const,
+        priority: 'medium' as const,
+        parentTaskId: 'b',
+        createdAt: 'x',
+      },
+    ];
+
+    const errors = validateTaskRelationships(
+      {
+        id: 'a',
+        title: 'A',
+        status: 'todo',
+        priority: 'medium',
+        parentTaskId: 'p4',
+        createdAt: 'x',
+      },
+      tasks,
+    );
+    expect(errors).toContain('Task hierarchy is too deep (max 5).');
+  });
 });

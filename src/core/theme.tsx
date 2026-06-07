@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext } from 'react';
 
 export type Theme = 'dark';
 
@@ -11,17 +11,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  root.dataset.theme = theme;
-  root.classList.add('dark');
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    applyTheme('dark');
-  }, []);
-
   const value: ThemeContextValue = {
     theme: 'dark',
     setTheme: () => {},

@@ -8,6 +8,7 @@ import { createAccountSlice, type AccountSlice } from './slices/accountSlice';
 import { createOnboardingSlice, type OnboardingSlice } from './slices/onboardingSlice';
 import { createSplitSlice, type SplitSlice } from './slices/splitSlice';
 import { createSystemSlice, type SystemSlice } from './slices/systemSlice';
+import { createFocusSlice, type FocusSlice } from './slices/focusSlice';
 
 export type CoreStoreState = TaskSlice &
   NoteSlice &
@@ -15,7 +16,8 @@ export type CoreStoreState = TaskSlice &
   AccountSlice &
   OnboardingSlice &
   SplitSlice &
-  SystemSlice;
+  SystemSlice &
+  FocusSlice;
 
 export const useStore = create<CoreStoreState>()((...a) => ({
   ...createTaskSlice(...a),
@@ -25,4 +27,5 @@ export const useStore = create<CoreStoreState>()((...a) => ({
   ...createOnboardingSlice(...a),
   ...createSplitSlice(...a),
   ...createSystemSlice(...a),
+  ...createFocusSlice(...a),
 }));

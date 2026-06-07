@@ -64,7 +64,7 @@ export function GroupDetailView({ group, open, onOpenChange }: GroupDetailViewPr
         await deleteGroup(group.id);
         onOpenChange(false);
       } catch (err) {
-        console.error('[Split] Failed to delete group:', err);
+        // Error handled by UI feedback
         alert(err instanceof Error ? err.message : 'Failed to delete group');
       }
     }
@@ -238,7 +238,7 @@ export function GroupDetailView({ group, open, onOpenChange }: GroupDetailViewPr
                                 try {
                                   await deleteSharedExpense(expense.id);
                                 } catch (err) {
-                                  console.error('[Split] Failed to delete expense:', err);
+                                  // Error handled by UI feedback
                                   alert(
                                     err instanceof Error ? err.message : 'Failed to delete expense',
                                   );

@@ -33,7 +33,7 @@ export function AddGroupSheet({ open, onOpenChange }: AddGroupSheetProps) {
       setName('');
       setSelectedFriends([]);
     } catch (err) {
-      console.error('[Split] Failed to create group:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to create group');
     } finally {
       setIsSaving(false);

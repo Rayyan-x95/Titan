@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, PencilLine, Trash2, Repeat, Calendar, Flag } from 'lucide-react';
+import { ChevronRight, PencilLine, Trash2, Repeat, Calendar, Flag, Clock } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import type { Task, TaskStatus } from '@/core/store/types';
 
@@ -11,6 +11,7 @@ interface TaskItemProps {
   onToggleStatus: (task: Task) => void;
   onDelete: (task: Task) => void;
   onAddSubtask?: (parentId: string) => void;
+  onFocus?: (task: Task) => void;
 }
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -26,6 +27,7 @@ export const TaskItem = memo(function TaskItem({
   onToggleStatus,
   onDelete,
   onAddSubtask,
+  onFocus,
 }: TaskItemProps) {
   const formattedDueDate = useMemo(() => {
     if (!task.dueDate) return null;
@@ -52,8 +54,8 @@ export const TaskItem = memo(function TaskItem({
       exit={{ opacity: 0, scale: 0.95 }}
       className="glass-panel group relative overflow-hidden rounded-[2rem] p-7 transition-all hover:shadow-glow-blue"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 w-full">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span
               className={cn(
@@ -129,11 +131,11 @@ export const TaskItem = memo(function TaskItem({
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-start gap-3 w-full sm:w-auto pt-4 sm:pt-0 border-t border-white/5 sm:border-t-0">
           <button
             onClick={() => onToggleStatus(task)}
             className={cn(
-              'h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border',
+              'h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border flex-1 sm:flex-none',
               task.status === 'done'
                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-glow-green'
                 : 'bg-blue-600 text-white border-blue-500 shadow-glow-blue active:scale-95',
@@ -143,7 +145,19 @@ export const TaskItem = memo(function TaskItem({
             <ChevronRight className="h-4 w-4" />
           </button>
 
-          <div className="flex gap-2 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
+          <div className="flex gap-2 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 shrink-0">
+            {task.status !== 'done' && onFocus && (
+              <button
+                aria-label={`Start focus session for ${task.title}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFocus(task);
+                }}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all active:scale-90"
+              >
+                <Clock className="h-5 w-5" />
+              </button>
+            )}
             <button
               aria-label={`Edit ${task.title}`}
               onClick={(e) => {
@@ -178,6 +192,7 @@ export const TaskItem = memo(function TaskItem({
               onToggleStatus={onToggleStatus}
               onDelete={onDelete}
               onAddSubtask={onAddSubtask}
+              onFocus={onFocus}
             />
           ))}
         </div>

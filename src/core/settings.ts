@@ -25,8 +25,12 @@ const DEFAULT_PIN_SALT = 'titan-pin-salt-v1';
 const PBKDF2_ITERATIONS = 100000;
 
 function resolvePinSalt(): string {
-  const envSalt = (globalThis as { process?: { env?: { SALT?: string } } }).process?.env?.SALT;
-  return envSalt ?? DEFAULT_PIN_SALT;
+  const metaEnv = (import.meta as unknown as { env?: Record<string, unknown> }).env;
+  const envSalt = (metaEnv?.VITE_PIN_SALT || metaEnv?.VITE_SALT) as string | undefined;
+  if (envSalt) return envSalt;
+
+  const envProcess = (globalThis as { process?: { env?: { SALT?: string } } }).process?.env?.SALT;
+  return envProcess ?? DEFAULT_PIN_SALT;
 }
 
 /**

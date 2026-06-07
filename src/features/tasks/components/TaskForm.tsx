@@ -149,7 +149,7 @@ export function TaskForm({
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">
                     Priority
@@ -185,7 +185,7 @@ export function TaskForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">
                     Energy Required
@@ -291,7 +291,7 @@ export function TaskForm({
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-4 grid grid-cols-2 gap-4"
+                    className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"
                   >
                     <Dropdown
                       label="Type"

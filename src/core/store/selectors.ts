@@ -10,8 +10,7 @@ import {
   calculateTotalIncome,
   safeAddCents,
   calculateMonthlyExpense,
-  getTopCategories,
-  getWeeklyTrend,
+  calculateBudgetUsage,
 } from '@/lib/core/financeEngine';
 import { calculateTotalOwed } from '@/lib/core/splitEngine';
 import type { TimelineItem } from './types';
@@ -120,14 +119,6 @@ export function useSharedExpenseItems() {
   return useStore(useShallow((state) => state.sharedExpenses));
 }
 
-export function useTopCategories(limit = 3) {
-  return useStore(useShallow((state) => getTopCategories(state.expenses, limit, new Date())));
-}
-
-export function useWeeklyTrend() {
-  return useStore(useShallow((state) => getWeeklyTrend(state.expenses)));
-}
-
 export function usePinnedNotes() {
   return useStore(useShallow((state) => state.notes.filter((n) => n.pinned)));
 }
@@ -163,8 +154,13 @@ export function useNotesToday() {
 export function useBudgetSummary() {
   return useStore(
     useShallow((state) => {
-      const totalLimit = state.budgets.reduce((sum, b) => safeAddCents(sum, b.limit), 0);
-      const totalSpent = calculateTotalSpent(state.expenses);
+      let totalLimit = 0;
+      let totalSpent = 0;
+      state.budgets.forEach((b) => {
+        const usage = calculateBudgetUsage(b, state.expenses, new Date());
+        totalLimit = safeAddCents(totalLimit, usage.limit);
+        totalSpent = safeAddCents(totalSpent, usage.spent);
+      });
       const percent = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
       return { limit: totalLimit, spent: totalSpent, percent };
     }),

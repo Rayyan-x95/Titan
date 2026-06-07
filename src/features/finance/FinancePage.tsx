@@ -9,15 +9,14 @@ import type { Expense, ExpenseInput, ExpenseUpdate, SharedExpense } from '@/core
 import { useSeo } from '@/hooks/useSeo';
 import { ExpenseForm } from './ExpenseForm';
 import { cn } from '@/utils/cn';
+import { TrajectoryForecast } from './components/TrajectoryForecast';
 import { parseQuickCapture } from '@/lib/core/parserEngine';
-import { dollarsToCentsSafe } from '@/lib/core/financeEngine';
+import { dollarsToCentsSafe, getTopCategories, getWeeklyTrend } from '@/lib/core/financeEngine';
 import { getFinanceItemTarget } from './financeNavigation';
 import {
   useTotalBalance,
   useMonthlySpend,
   useTotalIncome,
-  useTopCategories,
-  useWeeklyTrend,
   usePersonalExpenses,
   useSharedExpenseItems,
 } from '@/core/store/selectors';
@@ -71,8 +70,10 @@ export function FinancePage() {
 
   const personalExpenses = usePersonalExpenses();
   const sharedItems = useSharedExpenseItems();
-  const topCategories = useTopCategories(3);
-  const weeklyTrend = useWeeklyTrend();
+  const expenses = useStore((s) => s.expenses);
+
+  const topCategories = useMemo(() => getTopCategories(expenses, 3, new Date()), [expenses]);
+  const weeklyTrend = useMemo(() => getWeeklyTrend(expenses, new Date()), [expenses]);
 
   const accounts = useStore((s) => s.accounts);
   const tasks = useStore((s) => s.tasks);
@@ -158,7 +159,7 @@ export function FinancePage() {
       });
       setQuickInput('');
     } catch (err) {
-      console.error('[Finance] Quick add failed:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to add expense');
     }
   };
@@ -243,6 +244,8 @@ export function FinancePage() {
             <span className="text-sm">Split</span>
           </button>
         </section>
+
+        <TrajectoryForecast />
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="rounded-[2rem] glass-panel p-7 border-white/5">
@@ -457,7 +460,7 @@ export function FinancePage() {
               }
               setIsExpenseFormOpen(false);
             } catch (err) {
-              console.error('[Finance] Transaction failed:', err);
+              // Error handled by UI feedback
               alert(err instanceof Error ? err.message : 'Failed to save transaction');
             }
           }}

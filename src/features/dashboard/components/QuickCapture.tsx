@@ -65,8 +65,8 @@ export function QuickCapture() {
         setValue('');
         setStatus('success');
         setTimeout(() => setStatus('idle'), 1800);
-      } catch (error) {
-        console.error('[QuickCapture] Failed to process:', error);
+      } catch {
+        // Error handled by UI feedback
         setStatus('error');
         setTimeout(() => setStatus('idle'), 2000);
       }

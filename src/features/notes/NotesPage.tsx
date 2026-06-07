@@ -133,7 +133,7 @@ export function NotesPage() {
       setIsEditorOpen(false);
       setEditingNote(null);
     } catch (err) {
-      console.error('[Notes] Save failed:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
       setIsSaving(false);
@@ -149,7 +149,7 @@ export function NotesPage() {
         setEditingNote(null);
       }
     } catch (err) {
-      console.error('[Notes] Delete failed:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to delete note');
     }
   };
@@ -161,7 +161,7 @@ export function NotesPage() {
         noteId: note.id,
       });
     } catch (err) {
-      console.error('[Notes] Conversion failed:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to convert to task');
     }
   };

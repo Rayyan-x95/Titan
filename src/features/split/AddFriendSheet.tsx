@@ -32,7 +32,7 @@ export function AddFriendSheet({ open, onOpenChange }: AddFriendSheetProps) {
       setPhone('');
       setUpiId('');
     } catch (err) {
-      console.error('[Split] Failed to add friend:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to add friend');
     } finally {
       setIsSaving(false);

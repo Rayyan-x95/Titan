@@ -61,6 +61,7 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
         ? input.linkedNoteId
         : undefined;
 
+    const time = new Date().toISOString();
     const expense: Expense = {
       id: input.id ?? createId(),
       amount,
@@ -74,7 +75,8 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
       recurrenceRule: normalizeExpenseRecurrenceRule(input.recurrenceRule),
       linkedTaskId,
       linkedNoteId,
-      createdAt: sanitizeDateString(input.createdAt) || new Date().toISOString(),
+      createdAt: sanitizeDateString(input.createdAt) || time,
+      updatedAt: time,
     };
 
     const account = get().accounts.find((a) => a.id === expense.accountId);
@@ -83,6 +85,7 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
     const updatedAccount = {
       ...account,
       balance: applyExpenseToBalance(account.balance, expense.amount, expense.type),
+      updatedAt: time,
     };
 
     await db.transaction('rw', [db.expenses, db.accounts], async () => {
@@ -133,13 +136,21 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
       updateData.amount = newAmount;
     }
 
-    const next: Expense = { ...current, ...updateData };
+    const time = new Date().toISOString();
+    const next: Expense = { ...current, ...updateData, updatedAt: time };
     const currentAccount = get().accounts.find((a) => a.id === current.accountId);
     const nextAccount = get().accounts.find((a) => a.id === next.accountId);
 
     if (!currentAccount || !nextAccount) throw new Error('Invalid account ID');
 
-    const updatedAccounts = recalculateBalancesForExpenseUpdate(get().accounts, current, next);
+    const updatedAccounts = recalculateBalancesForExpenseUpdate(get().accounts, current, next).map(
+      (acc) => {
+        if (acc.id === current.accountId || acc.id === next.accountId) {
+          return { ...acc, updatedAt: time };
+        }
+        return acc;
+      },
+    );
     const updatedCurrent = updatedAccounts.find((a) => a.id === current.accountId)!;
     const updatedNext = updatedAccounts.find((a) => a.id === next.accountId)!;
 
@@ -153,7 +164,7 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
 
     set((state) => ({
       expenses: upsertItem(state.expenses, next),
-      accounts: upsertItem(upsertItem(state.accounts, updatedCurrent), updatedNext),
+      accounts: updatedAccounts.reduce((acc, a) => upsertItem(acc, a), state.accounts),
     }));
 
     return next;
@@ -166,15 +177,23 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
     const account = get().accounts.find((a) => a.id === current.accountId);
     let updatedAccount: typeof account | undefined;
 
+    const time = new Date().toISOString();
     if (account) {
       updatedAccount = {
         ...account,
         balance: revertExpenseFromBalance(account.balance, current.amount, current.type),
+        updatedAt: time,
       };
     }
 
-    await db.transaction('rw', [db.expenses, db.accounts], async () => {
+    await db.transaction('rw', [db.expenses, db.accounts, db.syncTombstones], async () => {
       await db.expenses.delete(id);
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'expenses',
+        deletedAt: time,
+      });
       if (updatedAccount) {
         await db.accounts.put(updatedAccount);
       }
@@ -193,7 +212,10 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
   },
 
   addBudget: async (input) => {
-    const budget = normalizeBudget(input);
+    const budget: Budget = {
+      ...normalizeBudget(input),
+      updatedAt: new Date().toISOString(),
+    };
     await db.budgets.put(budget);
     set((state) => ({ budgets: upsertItem(state.budgets, budget) }));
     return budget;
@@ -202,14 +224,25 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
   updateBudget: async (id, updates) => {
     const current = get().budgets.find((b) => b.id === id);
     if (!current) return undefined;
-    const next = normalizeBudget({ ...current, ...updates });
+    const next: Budget = {
+      ...normalizeBudget({ ...current, ...updates }),
+      updatedAt: new Date().toISOString(),
+    };
     await db.budgets.put(next);
     set((state) => ({ budgets: upsertItem(state.budgets, next) }));
     return next;
   },
 
   deleteBudget: async (id) => {
-    await db.budgets.delete(id);
+    await db.transaction('rw', [db.budgets, db.syncTombstones], async () => {
+      await db.budgets.delete(id);
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'budgets',
+        deletedAt: new Date().toISOString(),
+      });
+    });
     set((state) => ({ budgets: state.budgets.filter((b) => b.id !== id) }));
   },
 
@@ -226,7 +259,10 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
       if (newExpenses.length > 0) await db.expenses.bulkPut(newExpenses);
       if (updatedAccounts.length > 0) await db.accounts.bulkPut(updatedAccounts);
       for (const update of updatedExpenses) {
-        await db.expenses.update(update.id, { lastProcessedAt: update.lastProcessedAt });
+        await db.expenses.update(update.id, {
+          lastProcessedAt: update.lastProcessedAt,
+          updatedAt: update.updatedAt,
+        });
       }
     });
 
@@ -234,7 +270,9 @@ export const createFinanceSlice: StateCreator<CoreStoreState, [], [], FinanceSli
       expenses: state.expenses
         .map((e) => {
           const update = updatedExpenses.find((ue) => ue.id === e.id);
-          return update ? { ...e, lastProcessedAt: update.lastProcessedAt } : e;
+          return update
+            ? { ...e, lastProcessedAt: update.lastProcessedAt, updatedAt: update.updatedAt }
+            : e;
         })
         .concat(newExpenses),
       accounts: updatedAccounts.reduce((acc, updated) => upsertItem(acc, updated), state.accounts),

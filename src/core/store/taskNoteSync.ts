@@ -261,12 +261,18 @@ export function reconcileIntegrity(
   const friendIds = new Set(['user', ...friends.map((f) => f.id)]);
   const groupIds = new Set(groups.map((g) => g.id));
 
-  const cleanSharedExpenses = sharedExpenses.map((se) => ({
-    ...se,
-    groupId: se.groupId && groupIds.has(se.groupId) ? se.groupId : undefined,
-    paidBy: friendIds.has(se.paidBy) ? se.paidBy : 'user',
-    participants: se.participants.filter((p) => friendIds.has(p.id)),
-  }));
+  const cleanSharedExpenses = sharedExpenses.map((se) => {
+    const nextParticipants = se.participants.filter((p) => friendIds.has(p.id));
+    const nextPaidBy = friendIds.has(se.paidBy) ? se.paidBy : 'user';
+    const nextTotalAmount = nextParticipants.reduce((sum, p) => sum + p.amount, 0);
+    return {
+      ...se,
+      groupId: se.groupId && groupIds.has(se.groupId) ? se.groupId : undefined,
+      paidBy: nextPaidBy,
+      participants: nextParticipants,
+      totalAmount: nextTotalAmount,
+    };
+  });
 
   // 4. Group integrity
   const cleanGroups = groups.map((g) => ({

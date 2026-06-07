@@ -10,6 +10,7 @@ import { TaskForm } from '../components/TaskForm';
 import { TaskItem } from '../components/TaskItem';
 import { TaskCalendar } from '../components/TaskCalendar';
 import { TaskKanban } from '../components/TaskKanban';
+import { FocusTimerSheet } from '../components/FocusTimerSheet';
 import { cn } from '@/utils/cn';
 import { useTaskTree } from '../hooks/useTaskTree';
 
@@ -43,6 +44,13 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [view, setView] = useState<TaskView>('list');
   const [showMobileCalendar, setShowMobileCalendar] = useState(false);
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [isFocusOpen, setIsFocusOpen] = useState(false);
+
+  const handleFocusTask = (task: Task) => {
+    setFocusTask(task);
+    setIsFocusOpen(true);
+  };
 
   const markedDates = useMemo(
     () => tasks.map((t) => t.dueDate).filter(Boolean) as string[],
@@ -56,7 +64,7 @@ export function TasksPage() {
       await addTask({ ...values, title: values.title.trim() });
       setIsFormOpen(false);
     } catch (err) {
-      console.error('[Tasks] Failed to create task:', err);
+      // Error handled by UI feedback
       // For now using alert as fallback, ideally should use a toast component
       alert(err instanceof Error ? err.message : 'Failed to create task');
     }
@@ -68,7 +76,7 @@ export function TasksPage() {
       await updateTask(editingTask.id, { ...values, title: values.title.trim() });
       setEditingTask(null);
     } catch (err) {
-      console.error('[Tasks] Failed to update task:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to update task');
     }
   };
@@ -79,7 +87,7 @@ export function TasksPage() {
     try {
       await updateTask(task.id, { status: nextStatus });
     } catch (err) {
-      console.error('[Tasks] Failed to toggle status:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to update status');
     }
   };
@@ -88,7 +96,7 @@ export function TasksPage() {
     try {
       await deleteTask(task.id);
     } catch (err) {
-      console.error('[Tasks] Failed to delete task:', err);
+      // Error handled by UI feedback
       alert(err instanceof Error ? err.message : 'Failed to delete task');
     }
   };
@@ -264,6 +272,7 @@ export function TasksPage() {
                           void handleDeleteTask(t);
                         }}
                         onAddSubtask={handleAddSubtask}
+                        onFocus={handleFocusTask}
                       />
                     ))}
                     {taskTree.topLevel.length === 0 && (
@@ -302,6 +311,8 @@ export function TasksPage() {
         onOpenChange={setIsFormOpen}
         onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
       />
+
+      <FocusTimerSheet open={isFocusOpen} onOpenChange={setIsFocusOpen} task={focusTask} />
     </PageShell>
   );
 }

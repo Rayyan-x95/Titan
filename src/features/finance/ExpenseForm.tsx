@@ -175,8 +175,8 @@ export function ExpenseForm({
       } else {
         setSubmissionError('No transaction data found in image.');
       }
-    } catch (error) {
-      console.error('Scan failed', error);
+    } catch {
+      // Error handled by UI feedback
       setSubmissionError('OCR Engine failed. Please try a clearer photo.');
     } finally {
       setIsScanning(false);

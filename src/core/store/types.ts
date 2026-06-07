@@ -21,6 +21,7 @@ export interface Friend {
   upiId?: string;
   avatar?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Group {
@@ -28,6 +29,7 @@ export interface Group {
   name: string;
   memberIds: string[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SharedExpense {
@@ -45,6 +47,7 @@ export interface SharedExpense {
   settlementAmount?: MoneyCents;
   settlementDate?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface GroupBalance {
@@ -71,6 +74,7 @@ export interface Task {
   tags?: string[];
   createdAt: string;
   lastProcessedAt?: string;
+  updatedAt?: string;
 }
 
 export interface Note {
@@ -82,6 +86,7 @@ export interface Note {
   linkedNoteIds?: string[];
   pinned: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Account {
@@ -89,6 +94,7 @@ export interface Account {
   name: string;
   balance: MoneyCents;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Expense {
@@ -109,6 +115,7 @@ export interface Expense {
   linkedNoteId?: string;
   createdAt: string;
   lastProcessedAt?: string;
+  updatedAt?: string;
 }
 
 export interface DailySnapshot {
@@ -125,6 +132,7 @@ export interface Budget {
   category: string;
   limit: MoneyCents;
   period: 'weekly' | 'monthly';
+  updatedAt?: string;
 }
 
 export type FinancialGoal =
@@ -238,3 +246,33 @@ export type TimelineItem =
   | { type: 'note'; data: Note; timestamp: string }
   | { type: 'expense'; data: Expense; timestamp: string }
   | { type: 'split'; data: SharedExpense; timestamp: string };
+
+export interface FocusSession {
+  id: string;
+  taskId?: string;
+  startTime: string;
+  durationSeconds: number;
+  notes?: string;
+  updatedAt?: string;
+}
+
+export type FocusSessionInput = Omit<FocusSession, 'id' | 'startTime'> &
+  Partial<Pick<FocusSession, 'id' | 'startTime'>>;
+
+export type FocusSessionUpdate = Partial<Omit<FocusSession, 'id' | 'startTime'>>;
+
+export interface Embedding {
+  id: string;
+  entityId: string;
+  type: 'task' | 'note';
+  vector: number[];
+  text: string;
+  updatedAt: string;
+}
+
+export interface SyncTombstone {
+  id: string;
+  entityId: string;
+  entityType: string;
+  deletedAt: string;
+}

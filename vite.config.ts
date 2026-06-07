@@ -25,7 +25,18 @@ const deferredPrecacheChunks = [
   /^assets\/pdf\.worker\./,
 ];
 
+const PORT = Number(process.env.PORT) || 8000;
+
 export default defineConfig({
+  server: {
+    port: PORT,
+  },
+  preview: {
+    port: PORT,
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   plugins: [
     react(),
     VitePWA({
@@ -36,11 +47,26 @@ export default defineConfig({
       filename: 'service-worker.ts',
       manifest: false,
       injectManifest: {
-        globIgnores: ['**/sitemap.xml', '**/robots.txt'],
+        globIgnores: [
+          '**/sitemap.xml',
+          '**/robots.txt',
+          'Opengraph.png',
+          'screenshot-mobile.png',
+          '**/*.png', // Exclude screenshot image assets from direct offline precache
+        ],
         manifestTransforms: [
           async (entries) => ({
             manifest: entries.filter((entry) => {
               const url = entry.url.replace(/^\//, '');
+              // Exclude massive images and sitemaps from the PWA precache list to make install lightweight
+              if (
+                url === 'Opengraph.png' ||
+                url === 'screenshot-mobile.png' ||
+                url.includes('screenshot') ||
+                url.endsWith('.png')
+              ) {
+                return false;
+              }
               return !deferredPrecacheChunks.some((pattern) => pattern.test(url));
             }),
           }),
@@ -52,6 +78,9 @@ export default defineConfig({
     }),
   ],
   build: {
+    minify: 'esbuild',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -59,6 +88,10 @@ export default defineConfig({
           state: ['zustand', 'dexie'],
           ui: ['framer-motion', 'lucide-react', 'react-markdown'],
           charts: ['recharts'],
+          dates: ['date-fns'],
+          dnd: ['@hello-pangea/dnd'],
+          ocr: ['tesseract.js'],
+          qr: ['qrcode', 'qrcode.react'],
         },
       },
     },

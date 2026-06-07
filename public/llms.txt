@@ -1,0 +1,44 @@
+# Titan
+
+Unifying Tasks, Finances, and Notes into a Private, Connected Offline-First Workspace.
+
+## Product Context
+
+Titan is an offline-first PWA designed to give users a unified personal life operating system. It operates purely client-side with complete privacy: all data is stored on-device in IndexedDB via Dexie.js and state is managed in memory using Zustand. 
+
+For multi-device synchronization, Titan implements direct, zero-knowledge peer-to-peer sync using WebRTC and public signaling relays, completely eliminating the need for database storage in the cloud.
+
+## Key Features
+
+- **Task Management**: Hierarchical task trees supporting up to 5 levels of nesting, prioritization, status progression, tagging, and recurring schedules.
+- **Financial Tracker**: Cashflow, account balances (Cash, Bank), spending bounds, and monthly budgets. All money math uses integer cents to guarantee precision.
+- **Expense Splitter**: Shared sheets for splitting group costs, calculating balances, showing settlement QR codes, and resolving splits.
+- **Notes Workspace**: Bidirectional linking between tasks and notes, backlinks between notes, tagging, pin status, and markdown editing.
+- **Intelligence Dashboard**: Narrative timelines, spent progress gauges, and zero-knowledge local search queries.
+
+## Architecture & Data Flow
+
+```
+User Action (UI Component)
+    ↓
+Zustand Store Action (Normalize → Validate → Sync)
+    ↓
+IndexedDB Transaction (Dexie.js)
+    ↓
+Store Update (State Change)
+    ↓
+Component Re-render (fine-grained selector subscriptions)
+```
+
+## Public Routes
+
+- **Welcome Landing**: `https://titan.ninety5.in/home`
+- **Product Features**: `https://titan.ninety5.in/features`
+- **AI Task Management Guide**: `https://titan.ninety5.in/ai-task-manager`
+- **Expense Tracker Guide**: `https://titan.ninety5.in/expense-tracker`
+- **Shared Expenses Guide**: `https://titan.ninety5.in/shared-expenses`
+- **Timeline Overview**: `https://titan.ninety5.in/life-timeline`
+- **How to Install PWA**: `https://titan.ninety5.in/install-titan`
+- **Developer Blog**: `https://titan.ninety5.in/blog`
+- **Terms of Service**: `https://titan.ninety5.in/terms`
+- **Privacy Policy**: `https://titan.ninety5.in/privacy`

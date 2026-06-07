@@ -3,6 +3,7 @@ import { sanitizeString, sanitizeTags, sanitizeDateString, stripHtml } from '@/u
 
 export function normalizeNote(payload: unknown): Note {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    const time = new Date().toISOString();
     return {
       id: crypto.randomUUID(),
       content: '',
@@ -11,7 +12,8 @@ export function normalizeNote(payload: unknown): Note {
       pinned: false,
       linkedTaskIds: [],
       linkedNoteIds: [],
-      createdAt: new Date().toISOString(),
+      createdAt: time,
+      updatedAt: time,
     };
   }
   const p = payload as Record<string, unknown>;
@@ -26,6 +28,10 @@ export function normalizeNote(payload: unknown): Note {
       ? (p.area as (typeof validAreas)[number])
       : 'personal';
 
+  const fallbackTime = new Date().toISOString();
+  const createdAt = sanitizeDateString(p.createdAt) || fallbackTime;
+  const updatedAt = sanitizeDateString(p.updatedAt) || createdAt;
+
   return {
     id: noteId,
     content: content || '',
@@ -39,7 +45,8 @@ export function normalizeNote(payload: unknown): Note {
     linkedNoteIds: Array.isArray(p.linkedNoteIds)
       ? p.linkedNoteIds.filter((id): id is string => typeof id === 'string' && id !== noteId)
       : [],
-    createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
+    createdAt,
+    updatedAt,
   };
 }
 

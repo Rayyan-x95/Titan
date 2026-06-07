@@ -38,6 +38,34 @@ export function normalizeRecurrence(value: unknown): TaskRecurrence | undefined 
 
 const MAX_TASK_DEPTH = 5;
 
+export function getSubtreeDepth(taskId: string, tasks: Task[]): number {
+  const byParent = new Map<string, string[]>();
+  tasks.forEach((t) => {
+    if (t.parentTaskId) {
+      const list = byParent.get(t.parentTaskId) ?? [];
+      list.push(t.id);
+      byParent.set(t.parentTaskId, list);
+    }
+  });
+
+  const visited = new Set<string>();
+
+  function getDepth(id: string): number {
+    if (visited.has(id)) return 0;
+    visited.add(id);
+    const children = byParent.get(id) ?? [];
+    if (children.length === 0) {
+      visited.delete(id);
+      return 0;
+    }
+    const maxVal = 1 + Math.max(...children.map(getDepth));
+    visited.delete(id);
+    return maxVal;
+  }
+
+  return getDepth(taskId);
+}
+
 export function getTaskHierarchyDepth(taskId: string, tasks: Task[]): number {
   let depth = 0;
   let cursor: string | undefined = taskId;
@@ -84,7 +112,9 @@ export function validateTaskRelationships(task: Task, tasks: Task[]): string[] {
         errors.push('Task parent relationship creates a cycle.');
       }
 
-      if (getTaskHierarchyDepth(task.id, tasks) > MAX_TASK_DEPTH) {
+      const parentDepth = getTaskHierarchyDepth(task.parentTaskId, tasks);
+      const subtreeDepth = getSubtreeDepth(task.id, tasks);
+      if (parentDepth + 1 + subtreeDepth > MAX_TASK_DEPTH) {
         errors.push(`Task hierarchy is too deep (max ${MAX_TASK_DEPTH}).`);
       }
     }
@@ -100,6 +130,7 @@ export function getTodayTasks(tasks: Task[], now = new Date()): Task[] {
 
 export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Task {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    const time = new Date().toISOString();
     return {
       id: crypto.randomUUID(),
       title: 'Untitled Task',
@@ -107,7 +138,8 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
       priority: 'medium',
       energy: 'medium',
       area: 'personal',
-      createdAt: new Date().toISOString(),
+      createdAt: time,
+      updatedAt: time,
     };
   }
   const p = payload as Record<string, unknown>;
@@ -137,6 +169,10 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
       ? (p.area as (typeof validAreas)[number])
       : 'personal';
 
+  const fallbackTime = new Date().toISOString();
+  const createdAt = sanitizeDateString(p.createdAt) || fallbackTime;
+  const updatedAt = sanitizeDateString(p.updatedAt) || createdAt;
+
   const task: Task = {
     id: typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID(),
     title,
@@ -151,7 +187,8 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
     tags: Array.isArray(p.tags)
       ? p.tags.filter((t): t is string => typeof t === 'string')
       : undefined,
-    createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
+    createdAt,
+    updatedAt,
   };
 
   return task;
@@ -171,7 +208,7 @@ export function generateNextRecurringTasks(tasks: Task[]): {
     if (!nextOccurrence) continue;
 
     const now = new Date().toISOString();
-    updatedTasks.push({ ...item, lastProcessedAt: now });
+    updatedTasks.push({ ...item, lastProcessedAt: now, updatedAt: now });
 
     newTasks.push({
       id: crypto.randomUUID(),
@@ -185,6 +222,7 @@ export function generateNextRecurringTasks(tasks: Task[]): {
       tags: item.tags,
       noteId: item.noteId,
       createdAt: now,
+      updatedAt: now,
     });
   }
 

@@ -40,12 +40,14 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
   sharedExpenses: [],
 
   addFriend: async (input) => {
+    const time = new Date().toISOString();
     const friend: Friend = {
       id: input.id || createId(),
       name: sanitizeString(input.name, 100),
       phoneNumber: sanitizeString(input.phoneNumber, 20),
       avatar: input.avatar,
       createdAt: createTimestamp(input.createdAt),
+      updatedAt: time,
     };
     await db.friends.put(friend);
     set((state) => ({ friends: upsertItem(state.friends, friend) }));
@@ -62,18 +64,21 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     if ('phoneNumber' in sanitizedUpdates && sanitizedUpdates.phoneNumber !== undefined) {
       sanitizedUpdates.phoneNumber = sanitizeString(sanitizedUpdates.phoneNumber, 20);
     }
-    const next: Friend = { ...current, ...sanitizedUpdates };
+    const next: Friend = { ...current, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
     await db.friends.put(next);
     set((state) => ({ friends: upsertItem(state.friends, next) }));
     return next;
   },
 
   deleteFriend: async (id) => {
+    const time = new Date().toISOString();
     const currentState = get();
-    const groups = currentState.groups.map((g) => ({
-      ...g,
-      memberIds: g.memberIds.filter((mid) => mid !== id),
-    }));
+    const groups = currentState.groups.map((g) => {
+      const hasMember = g.memberIds.includes(id);
+      return hasMember
+        ? { ...g, memberIds: g.memberIds.filter((mid) => mid !== id), updatedAt: time }
+        : g;
+    });
 
     const nextSharedExpenses = currentState.sharedExpenses.map((se) => {
       let modified = false;
@@ -89,31 +94,45 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
 
       // Validate that shared expense still has participants
       if (nextParticipants.length === 0 && nextPaidBy !== 'user') {
-        console.warn(
-          `[Titan] Shared expense ${se.id} would have no participants; setting paidBy to 'user'`,
-        );
+        // Silently fix invalid state
         nextPaidBy = 'user';
         modified = true;
       }
 
-      return modified ? { ...se, paidBy: nextPaidBy, participants: nextParticipants } : se;
+      if (modified) {
+        const nextTotalAmount = nextParticipants.reduce((sum, p) => sum + p.amount, 0);
+        return {
+          ...se,
+          paidBy: nextPaidBy,
+          participants: nextParticipants,
+          totalAmount: nextTotalAmount,
+          updatedAt: time,
+        };
+      }
+      return se;
     });
 
-    await db.transaction('rw', [db.friends, db.groups, db.sharedExpenses], async () => {
-      await db.friends.delete(id);
-      for (const g of groups) {
-        await db.groups.put(g);
-      }
-      const updatedSharedExpenses = nextSharedExpenses.filter((se) => {
-        const orig = currentState.sharedExpenses.find((ose) => ose.id === se.id);
-        return (
-          orig && (orig.paidBy !== se.paidBy || orig.participants.length !== se.participants.length)
-        );
-      });
-      if (updatedSharedExpenses.length > 0) {
-        await db.sharedExpenses.bulkPut(updatedSharedExpenses);
-      }
-    });
+    await db.transaction(
+      'rw',
+      [db.friends, db.groups, db.sharedExpenses, db.syncTombstones],
+      async () => {
+        await db.friends.delete(id);
+        await db.syncTombstones.put({
+          id: crypto.randomUUID(),
+          entityId: id,
+          entityType: 'friends',
+          deletedAt: time,
+        });
+        const updatedGroups = groups.filter((g) => g.updatedAt === time);
+        if (updatedGroups.length > 0) {
+          await db.groups.bulkPut(updatedGroups);
+        }
+        const updatedSharedExpenses = nextSharedExpenses.filter((se) => se.updatedAt === time);
+        if (updatedSharedExpenses.length > 0) {
+          await db.sharedExpenses.bulkPut(updatedSharedExpenses);
+        }
+      },
+    );
 
     set((state) => ({
       friends: state.friends.filter((f) => f.id !== id),
@@ -132,11 +151,13 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
       );
     }
 
+    const time = new Date().toISOString();
     const group: Group = {
       id: input.id || createId(),
       name: sanitizeString(input.name, 100),
       memberIds: input.memberIds || [],
       createdAt: createTimestamp(input.createdAt),
+      updatedAt: time,
     };
     await db.groups.put(group);
     set((state) => ({ groups: upsertItem(state.groups, group) }));
@@ -161,22 +182,27 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     if ('name' in sanitizedUpdates && typeof sanitizedUpdates.name === 'string') {
       sanitizedUpdates.name = sanitizeString(sanitizedUpdates.name, 100) || current.name;
     }
-    const next: Group = { ...current, ...sanitizedUpdates };
+    const next: Group = { ...current, ...sanitizedUpdates, updatedAt: new Date().toISOString() };
     await db.groups.put(next);
     set((state) => ({ groups: upsertItem(state.groups, next) }));
     return next;
   },
 
   deleteGroup: async (id) => {
+    const time = new Date().toISOString();
     const sharedExpenses = get().sharedExpenses.map((se) =>
-      se.groupId === id ? { ...se, groupId: undefined } : se,
+      se.groupId === id ? { ...se, groupId: undefined, updatedAt: time } : se,
     );
 
-    const originalSharedById = new Map(get().sharedExpenses.map((se) => [se.id, se]));
-
-    await db.transaction('rw', [db.groups, db.sharedExpenses], async () => {
+    await db.transaction('rw', [db.groups, db.sharedExpenses, db.syncTombstones], async () => {
       await db.groups.delete(id);
-      const affectedExpenses = sharedExpenses.filter((se) => se !== originalSharedById.get(se.id));
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'groups',
+        deletedAt: time,
+      });
+      const affectedExpenses = sharedExpenses.filter((se) => se.updatedAt === time);
       if (affectedExpenses.length > 0) {
         await db.sharedExpenses.bulkPut(affectedExpenses);
       }
@@ -215,6 +241,7 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
       throw new Error('Cannot add shared expense: Participant shares must sum to total amount.');
     }
 
+    const time = new Date().toISOString();
     const expense: SharedExpense = {
       id: input.id || createId(),
       ...input,
@@ -222,6 +249,7 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
       description: sanitizeString(input.description, 200),
       paidBy: input.paidBy || 'user',
       createdAt: createTimestamp(input.createdAt),
+      updatedAt: time,
     };
     await db.sharedExpenses.put(expense);
     set((state) => ({ sharedExpenses: upsertItem(state.sharedExpenses, expense) }));
@@ -237,7 +265,8 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
     const current = get().sharedExpenses.find((se) => se.id === id);
     if (!current) return undefined;
 
-    const next: SharedExpense = { ...current, ...updates };
+    const time = new Date().toISOString();
+    const next: SharedExpense = { ...current, ...updates, updatedAt: time };
 
     // Validate group exists if provided
     if (next.groupId && !get().groups.some((g) => g.id === next.groupId)) {
@@ -276,7 +305,16 @@ export const createSplitSlice: StateCreator<CoreStoreState, [], [], SplitSlice> 
   },
 
   deleteSharedExpense: async (id) => {
-    await db.sharedExpenses.delete(id);
+    const time = new Date().toISOString();
+    await db.transaction('rw', [db.sharedExpenses, db.syncTombstones], async () => {
+      await db.sharedExpenses.delete(id);
+      await db.syncTombstones.put({
+        id: crypto.randomUUID(),
+        entityId: id,
+        entityType: 'sharedExpenses',
+        deletedAt: time,
+      });
+    });
     set((state) => ({ sharedExpenses: state.sharedExpenses.filter((se) => se.id !== id) }));
 
     // Activity tracking

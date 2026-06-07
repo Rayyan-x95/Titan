@@ -279,7 +279,9 @@ export function calculateBudgetUsage(
   const filteredExpenses = filterExpensesByRange(expenses, range, now);
 
   const spent = filteredExpenses
-    .filter((expense) => expense.type === 'expense' && expense.category === budget.category)
+    .filter(
+      (expense) => expense.type === 'expense' && expense.category.toLowerCase() === budget.category,
+    )
     .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 
   const limit = normalizePositiveCents(budget.limit);
@@ -388,17 +390,20 @@ export function generateNextRecurringTransactions(
   now = new Date(),
 ): {
   newExpenses: Expense[];
-  updatedExpenses: { id: string; lastProcessedAt: string }[];
+  updatedExpenses: { id: string; lastProcessedAt: string; updatedAt: string }[];
   updatedAccounts: Account[];
 } {
   const recurring = expenses.filter((e) => e.isRecurring && e.recurrenceRule);
   const newExpenses: Expense[] = [];
-  const updatedExpenses: { id: string; lastProcessedAt: string }[] = [];
+  const updatedExpenses: { id: string; lastProcessedAt: string; updatedAt: string }[] = [];
   const nextAccounts = [...accounts];
   const MAX_RECURRING_PER_TRANSACTION = 12;
   let totalGenerated = 0;
 
   for (const item of recurring) {
+    if (totalGenerated >= MAX_RECURRING_PER_TRANSACTION) {
+      break;
+    }
     const baseDate = item.lastProcessedAt || item.createdAt;
     let cursorDate = new Date(baseDate);
     const nextOccurrence = calculateExpenseNextOccurrence(
@@ -411,6 +416,7 @@ export function generateNextRecurringTransactions(
     let createdCount = 0;
 
     while (nextDate <= now && totalGenerated < MAX_RECURRING_PER_TRANSACTION) {
+      const nowStr = now.toISOString();
       const newExpense: Expense = {
         id: crypto.randomUUID(),
         amount: item.amount,
@@ -422,6 +428,7 @@ export function generateNextRecurringTransactions(
         area: item.area,
         isRecurring: false,
         createdAt: nextDate.toISOString(),
+        updatedAt: nowStr,
       };
 
       newExpenses.push(newExpense);
@@ -447,13 +454,16 @@ export function generateNextRecurringTransactions(
       createdCount++;
 
       if (totalGenerated >= MAX_RECURRING_PER_TRANSACTION) {
-        console.warn('[Recurring] Limit reached, next sync will process more');
         break;
       }
     }
 
     if (createdCount > 0) {
-      updatedExpenses.push({ id: item.id, lastProcessedAt: cursorDate.toISOString() });
+      updatedExpenses.push({
+        id: item.id,
+        lastProcessedAt: cursorDate.toISOString(),
+        updatedAt: now.toISOString(),
+      });
     }
   }
 
