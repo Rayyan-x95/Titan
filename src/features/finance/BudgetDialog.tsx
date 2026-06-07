@@ -42,7 +42,7 @@ export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl"
+        className="relative flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div>
@@ -61,7 +61,7 @@ export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
           <form
             onSubmit={(e) => {
               void handleAdd(e);

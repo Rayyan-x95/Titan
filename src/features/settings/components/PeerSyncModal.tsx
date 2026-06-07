@@ -385,7 +385,7 @@ export function PeerSyncModal({ isOpen, onClose }: PeerSyncModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/5 bg-slate-900/60 backdrop-blur-xl shadow-2xl p-6 md:p-8 space-y-6">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2rem] border border-white/5 bg-slate-900/60 backdrop-blur-xl shadow-2xl p-6 md:p-8 space-y-6">
         {/* Glow decoration */}
         <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-blue-500/10 blur-[80px]" />
         <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-[80px]" />

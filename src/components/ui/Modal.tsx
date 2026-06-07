@@ -57,7 +57,7 @@ export function Modal({ open, onClose, children, className, id }: ModalProps) {
               exit={{ opacity: 0, y: 20, scale: 0.985 }}
               transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
               className={cn(
-                'ui-surface w-full max-w-xl rounded-t-[2.5rem] border border-border/70 p-8 pb-10 shadow-2xl sm:rounded-[2.5rem]',
+                'ui-surface w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-t-[2.5rem] border border-border/70 p-8 pb-10 shadow-2xl sm:rounded-[2.5rem]',
                 className,
               )}
               onClick={(event) => event.stopPropagation()}

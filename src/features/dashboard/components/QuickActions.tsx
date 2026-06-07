@@ -47,7 +47,7 @@ function BottomSheet({
                 onClose();
               }
             }}
-            className="glass-panel w-full max-w-lg rounded-t-[2.5rem] p-8 pb-[calc(2rem+var(--safe-area-bottom))] shadow-2xl sm:rounded-[2.5rem] touch-none"
+            className="glass-panel w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-[2.5rem] p-8 pb-[calc(2rem+var(--safe-area-bottom))] shadow-2xl sm:rounded-[2.5rem] touch-none"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-6 h-1.5 w-12 rounded-full bg-white/20 active:bg-white/40 transition-colors sm:hidden" />
