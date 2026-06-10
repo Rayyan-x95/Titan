@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/Rayyan-x95/Titan/releases)
 [![Build Status](https://github.com/Rayyan-x95/Titan/actions/workflows/ci.yml/badge.svg)](https://github.com/Rayyan-x95/Titan/actions)
-[![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen.svg)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-68%20passing-brightgreen.svg)](#-testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/)
 
 **Titan** is a purely open-source, privacy-first **Personal Life Operating System**. It unifies tasks, notes, and financial tracking into a high-performance, offline-first Progressive Web App (PWA).
@@ -17,6 +17,7 @@
 - **Tasks** — Kanban boards, subtask hierarchies, recurring tasks, due dates, energy & priority tagging
 - **Notes** — Markdown-ready notes with bidirectional linking to tasks and other notes
 - **Finance** — Expense/income tracking, multi-account management, budget monitoring, spending charts
+- **Focus Sessions** — Built-in focus timer with task association and session notes logging
 - **Contextual Links** — Tasks ↔ Notes ↔ Expenses linked automatically with referential integrity
 
 ### 💰 Precision Finance
@@ -26,6 +27,7 @@
 - Recurring transactions with automatic processing
 - Budget suggestions based on spending patterns
 - SMS/receipt parsing for quick expense entry (OCR via Tesseract.js)
+- Financial balance projections (Optimistic and Pessimistic cash flow trajectories)
 
 ### 👥 Split Expenses
 
@@ -33,6 +35,12 @@
 - Friend management with automatic debt settlement
 - QR code generation for UPI payments
 - Per-group balance tracking
+
+### 🧠 Intelligent Utilities
+
+- **Local Semantic Search** — On-device AI-powered similarity search and vector embeddings using Web Workers
+- **Data Health Diagnostics** — Automated referential integrity checks and graph health monitoring
+- **Peer-to-Peer Sync** — Zero-cloud local syncing with end-to-end PBKDF2 key derivation and AES-GCM encryption
 
 ### 📱 PWA Native
 
@@ -60,9 +68,9 @@ User Action → Zustand Store → Dexie (IndexedDB) → State Update → UI Re-r
 | Layer        | Purpose                      | Location                           |
 | ------------ | ---------------------------- | ---------------------------------- |
 | **UI**       | React components, pages      | `src/features/`, `src/components/` |
-| **State**    | Zustand store (7 slices)     | `src/core/store/`                  |
+| **State**    | Zustand store (8 slices)     | `src/core/store/`                  |
 | **Logic**    | Pure business functions      | `src/lib/core/`                    |
-| **Database** | Dexie IndexedDB (10 tables)  | `src/core/db/`                     |
+| **Database** | Dexie IndexedDB (13 tables)  | `src/core/db/`                     |
 | **Utils**    | Sanitization, parsing, dates | `src/utils/`                       |
 
 ## 🛠️ Tech Stack
@@ -114,13 +122,13 @@ npm run build       # Production build → dist/
 ```
 src/
 ├── core/                     # State management & persistence
-│   ├── store/                # Zustand store (7 slices)
+│   ├── store/                # Zustand store (8 slices)
 │   │   ├── useStore.ts       # Main store composition
-│   │   ├── slices/           # taskSlice, noteSlice, financeSlice, etc.
+│   │   ├── slices/           # taskSlice, noteSlice, financeSlice, focusSlice, etc.
 │   │   ├── taskNoteSync.ts   # Bidirectional linking engine
 │   │   ├── selectors.ts      # Derived state hooks
 │   │   └── types.ts          # All entity type definitions
-│   ├── db/db.ts              # Dexie schema (10 tables)
+│   ├── db/db.ts              # Dexie schema (13 tables, version 6)
 │   └── settings.ts           # App settings (currency, PIN, notifications)
 ├── lib/core/                 # Pure business logic engines
 │   ├── taskEngine.ts         # Task normalization, recurrence, hierarchy
@@ -128,13 +136,18 @@ src/
 │   ├── noteEngine.ts         # Note normalization & sanitization
 │   ├── splitEngine.ts        # Expense splitting & settlements
 │   ├── parserEngine.ts       # SMS/OCR text → structured data
-│   └── timelineEngine.ts     # Daily snapshot computation
+│   ├── timelineEngine.ts     # Daily snapshot computation
+│   ├── intelligenceEngine.ts # Daily brief, search parser, data health diagnostics
+│   ├── projectionEngine.ts   # Cash flow balance projections
+│   ├── semanticEngine.ts     # Local vector embeddings & cosine similarity
+│   ├── syncEngine.ts         # LWW synchronization merge & encryption helpers
+│   └── notifications.ts      # System/browser notifications logic
 ├── features/                 # Feature pages (lazy-loaded)
 │   ├── dashboard/            # Overview & quick actions
-│   ├── tasks/                # Task CRUD, Kanban, Calendar
-│   ├── notes/                # Notes CRUD, editor, tagging
-│   ├── finance/              # Expenses, budgets, charts
-│   ├── split/                # Group expenses, QR, settlements
+│   ├── tasks/                # Task CRUD, Kanban, TaskForm, Calendar
+│   ├── notes/                # Notes CRUD, NoteEditor, tagging, linking
+│   ├── finance/              # Expense tracking, BudgetDialog, SpendingCharts
+│   ├── split/                # Group expenses, QR payments, settlement
 │   ├── settings/             # Preferences, data management
 │   ├── onboarding/           # Multi-step onboarding flow
 │   ├── timeline/             # Historical activity view
@@ -151,21 +164,27 @@ src/
 
 ## 🧪 Testing
 
-**44 tests** across **13 test files** — all passing.
+**68 tests** across **17 test files** — all passing.
 
 | Module               | Coverage                                      | Tests |
 | -------------------- | --------------------------------------------- | ----- |
-| Task Engine          | Recurrence, cycles, hierarchy, due dates      | 4     |
+| Task Engine          | Recurrence, cycles, hierarchy, due dates      | 5     |
 | Finance Engine       | Balance ops, cross-account, filtering, totals | 4     |
-| Split Engine         | Equal/weighted split, settlements, edge cases | 7     |
+| Split Engine         | Equal/weighted split, settlements, balances   | 3     |
+| Split Engine Edge    | Weighted split precision, zero values         | 4     |
 | Task-Note Sync       | Link/unlink, reconciliation, validation       | 4     |
-| Parser Engine        | SMS, OCR, quick capture, edge cases           | 5     |
+| Parser Engine        | Quick capture parsing, structured formatting  | 2     |
+| Parser Engine Edge   | SMS/OCR parsing fallback, empty inputs        | 3     |
 | SMS Parser           | Amount, merchant, date, category extraction   | 4     |
-| Store Integration    | Task CRUD, note linking, expense references   | 7     |
-| Delete Cascades      | Reference cleanup, hierarchy detection        | 3     |
-| Integration Flows    | Recurring tasks, parsing, reconciliation      | 3     |
-| Finance Navigation   | Shared split target calculation               | 2     |
+| Projection Engine    | Cash flow balance projections (opt/pes)       | 2     |
+| Intelligence Engine  | Daily brief, search parser, data diagnostics  | 6     |
+| Sync Engine          | LWW merge, encryption, PBKDF2 derivation      | 7     |
+| Semantic Engine      | Local vector embeddings, cosine similarity    | 4     |
+| Delete Cascades      | Reference cleanup, cascading entity deletes   | 3     |
+| Integration Flows    | Recurring tasks, parsing, reconciliation flow | 3     |
+| Finance Navigation   | Shared split target calculation, routing      | 2     |
 | Onboarding Logic     | Welcome page setup and step configuration     | 1     |
+| Store Integration    | Zustand multi-slice store CRUD, IndexedDB sync| 11    |
 
 ```bash
 npm test                        # Run all tests
